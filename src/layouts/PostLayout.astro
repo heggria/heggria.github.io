@@ -1,0 +1,35 @@
+---
+import BaseLayout from './BaseLayout.astro'
+
+interface Props {
+  title: string
+  description?: string
+  date: Date
+  duration?: string
+  tags?: string[]
+  canonical: string
+}
+
+const { title, description = title, date, duration, tags = [], canonical } = Astro.props
+const formattedDate = new Intl.DateTimeFormat('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' }).format(date)
+---
+
+<BaseLayout title={`${title} — Heggria`} description={description} canonical={canonical} type="article">
+  <article class="post-shell">
+    <header class="post-header">
+      <a class="post-back" href="/writing/">← Writing</a>
+      <h1>{title}</h1>
+      {description !== title && <p class="post-deck">{description}</p>}
+      <div class="post-meta">
+        <time datetime={date.toISOString()}>{formattedDate}</time>
+        {duration && <span>{duration}</span>}
+        {tags.map(tag => <span>#{tag}</span>)}
+      </div>
+    </header>
+    <div class="prose"><slot /></div>
+    <footer class="post-footer">
+      <p>如果这篇文章让你想到什么，欢迎通过 <a href="mailto:bshengtao@gmail.com">邮件</a> 或 <a href="https://github.com/heggria">GitHub</a> 找到我。</p>
+      <a href="/writing/">继续阅读 →</a>
+    </footer>
+  </article>
+</BaseLayout>

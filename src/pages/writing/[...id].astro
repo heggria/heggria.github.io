@@ -1,0 +1,18 @@
+---
+import { getCollection, render, type CollectionEntry } from 'astro:content'
+import PostLayout from '../../layouts/PostLayout.astro'
+
+export async function getStaticPaths() {
+  const posts = await getCollection('posts', ({ data }) => !data.draft)
+  return posts.map(post => ({ params: { id: post.id }, props: { post } }))
+}
+
+interface Props { post: CollectionEntry<'posts'> }
+const { post } = Astro.props
+const { Content } = await render(post)
+const canonical = new URL(`/writing/${post.id}/`, Astro.site).href
+---
+
+<PostLayout title={post.data.title} description={post.data.description} date={post.data.date} duration={post.data.duration} tags={post.data.tags} canonical={canonical}>
+  <Content />
+</PostLayout>

@@ -1,7 +1,10 @@
-**[heggria.site](https://heggria.site)**
+# heggria.github.io
 
-my personal website
+Heggria 的个人写作与作品站。
 
-<br>
+- Astro 静态生成
+- 类型安全内容集合
+- RSS、Sitemap 与 Pagefind 全文搜索
+- GitHub Pages 自动发布
 
-<samp>code is licensed under <a href='./LICENSE'>MIT</a>,<br> words and images are licensed under <a href='https://creativecommons.org/licenses/by-nc-sa/4.0/'>CC BY-NC-SA 4.0</a></samp>.
+文章内容采用 [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/)，代码采用 MIT License。

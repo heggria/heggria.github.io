@@ -1,0 +1,24 @@
+---
+import { getCollection } from 'astro:content'
+import BaseLayout from '../../layouts/BaseLayout.astro'
+
+const posts = (await getCollection('posts', ({ data }) => !data.draft))
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
+const date = (value: Date) => new Intl.DateTimeFormat('zh-CN', { month: '2-digit', day: '2-digit' }).format(value)
+let previousYear: number | undefined
+---
+
+<BaseLayout title="Writing — Heggria" description="关于工程判断、系统、工具与那些值得被保留下来的思考。">
+  <div class="page-width">
+    <header class="page-intro"><p class="kicker">Writing</p><h1>值得反复回看的想法。</h1><p>关于工程判断、约束、工具与长期工作的公开笔记。技术会变化，但判断值得留下。</p></header>
+    <section class="writing-list" aria-label="文章列表">
+      {posts.map((post) => {
+        const year = post.data.date.getFullYear()
+        const showYear = year !== previousYear
+        previousYear = year
+        const href = post.data.redirect || `/writing/${post.id}/`
+        return <>{showYear && <div class="year-label">{year}</div>}<a class="writing-row" href={href}><span class="writing-date">{date(post.data.date)}</span><span class="writing-title">{post.data.title}</span><span class="writing-duration">{post.data.duration || 'Essay'}</span><span>↗</span></a></>
+      })}
+    </section>
+  </div>
+</BaseLayout>

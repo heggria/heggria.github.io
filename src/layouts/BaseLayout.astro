@@ -1,0 +1,82 @@
+---
+import '../styles/global.css'
+
+interface Props {
+  title?: string
+  description?: string
+  canonical?: string
+  type?: 'website' | 'article'
+}
+
+const {
+  title = 'Heggria — Builder & Writer',
+  description = '关于工程判断、系统、工具与那些值得被保留下来的思考。',
+  canonical = Astro.url.href,
+  type = 'website',
+} = Astro.props
+const pathname = Astro.url.pathname
+---
+
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="generator" content={Astro.generator} />
+    <meta name="theme-color" content="#f4f1e9" />
+    <meta name="description" content={description} />
+    <meta property="og:type" content={type} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:site_name" content="Heggria" />
+    <meta property="og:image" content="https://heggria.github.io/avatar.png" />
+    <meta property="og:image:width" content="1024" />
+    <meta property="og:image:height" content="1024" />
+    <meta property="og:image:alt" content="Heggria 的插画头像" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content="https://heggria.github.io/avatar.png" />
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" href="/favicon.png" type="image/png" />
+    <link rel="alternate" type="application/rss+xml" title="Heggria 的文章" href="/rss.xml" />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+    <script is:inline>
+      (() => {
+        const saved = localStorage.getItem('theme')
+        const dark = saved === 'dark' || (!saved && matchMedia('(prefers-color-scheme: dark)').matches)
+        document.documentElement.dataset.theme = dark ? 'dark' : 'light'
+      })()
+    </script>
+    <title>{title}</title>
+  </head>
+  <body>
+    <a class="skip-link" href="#content">跳到正文</a>
+    <header class="site-header" data-pagefind-ignore>
+      <a class="wordmark" href="/" aria-label="Heggria 首页">Heggria<span>.</span></a>
+      <nav aria-label="主导航">
+        <a class:list={[{ active: pathname.startsWith('/writing') }, 'nav-link']} href="/writing/">Writing</a>
+        <a class="nav-link" href="/#work">Work</a>
+        <a class:list={[{ active: pathname === '/about/' }, 'nav-link']} href="/about/">About</a>
+      </nav>
+      <div class="header-actions">
+        <a class="search-link" href="/search/" aria-label="搜索文章">⌕ <span>Search</span></a>
+        <button class="theme-toggle" type="button" aria-label="切换深浅色主题"><span aria-hidden="true">◐</span></button>
+      </div>
+    </header>
+    <main id="content" data-pagefind-body><slot /></main>
+    <footer class="site-footer" data-pagefind-ignore>
+      <p>把工作做清楚，也把思考留下来。</p>
+      <p><a href="/rss.xml">RSS</a> · <a href="https://github.com/heggria">GitHub</a> · © 2024–{new Date().getFullYear()} Heggria</p>
+    </footer>
+    <script>
+      const button = document.querySelector<HTMLButtonElement>('.theme-toggle')
+      button?.addEventListener('click', () => {
+        const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'
+        document.documentElement.dataset.theme = next
+        localStorage.setItem('theme', next)
+      })
+    </script>
+  </body>
+</html>

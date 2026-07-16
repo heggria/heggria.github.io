@@ -1,4 +1,5 @@
-node_modules
-dist
-temp
-.vite-ssg-temp
+node_modules/
+dist/
+.astro/
+.DS_Store
+*.log

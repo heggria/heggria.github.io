@@ -1,0 +1,31 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro'
+---
+<BaseLayout title="Search — Heggria" description="搜索 Heggria 的文章。">
+  <div class="page-width search-shell">
+    <p class="kicker">Search</p><h1 class="visually-hidden">搜索文章</h1>
+    <input id="search" class="search-box" type="search" placeholder="搜索文章、概念或代码…" autocomplete="off" autofocus />
+    <div id="search-status" class="year-label">输入关键词开始搜索</div>
+    <div id="search-results" aria-live="polite"></div>
+  </div>
+  <script is:inline>
+    const input = document.querySelector('#search')
+    const status = document.querySelector('#search-status')
+    const results = document.querySelector('#search-results')
+    let pagefind
+    input?.addEventListener('input', async (event) => {
+      const query = event.target.value.trim()
+      if (!query) { results.replaceChildren(); status.textContent = '输入关键词开始搜索'; return }
+      pagefind ||= await import('/pagefind/pagefind.js')
+      const search = await pagefind.search(query)
+      const data = await Promise.all(search.results.slice(0, 12).map(result => result.data()))
+      status.textContent = `找到 ${search.results.length} 条结果`
+      results.replaceChildren(...data.map(item => {
+        const link = document.createElement('a'); link.className = 'search-result'; link.href = item.url
+        const title = document.createElement('h2'); title.textContent = item.meta.title
+        const excerpt = document.createElement('p'); excerpt.innerHTML = item.excerpt
+        link.append(title, excerpt); return link
+      }))
+    })
+  </script>
+</BaseLayout>
