@@ -1,0 +1,19 @@
+---
+interface Props {
+  href: string
+  title: string
+  description?: string
+  date: Date
+  duration?: string
+  featured?: boolean
+  index?: number
+}
+const { href, title, description, date, duration, featured = false, index = 0 } = Astro.props
+const formatted = new Intl.DateTimeFormat('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' }).format(date)
+---
+<a class:list={['post-card', { featured }]} href={href}>
+  <div class="card-meta"><span>Essay {String(index + 1).padStart(2, '0')}</span><span>{formatted}{duration ? ` · ${duration}` : ''}</span></div>
+  <h3>{title}</h3>
+  {description && <p>{description}</p>}
+  <span class="card-cta">阅读全文 ↗</span>
+</a>

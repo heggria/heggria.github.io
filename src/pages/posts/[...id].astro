@@ -1,0 +1,9 @@
+---
+import { getCollection } from 'astro:content'
+
+export async function getStaticPaths() {
+  const posts = await getCollection('posts')
+  return posts.map(post => ({ params: { id: post.id } }))
+}
+return Astro.redirect(`/writing/${Astro.params.id}/`, 301)
+---

@@ -1,0 +1,54 @@
+---
+import { getCollection } from 'astro:content'
+import BaseLayout from '../layouts/BaseLayout.astro'
+import PostCard from '../components/PostCard.astro'
+
+const posts = (await getCollection('posts', ({ data }) => !data.draft))
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
+const philosophyIds = ['work-should-outlive-chat', 'trust-comes-from-boundaries', 'small-tools-sharp-edges']
+const featured = philosophyIds.map(id => posts.find(post => post.id === id)).filter(Boolean)
+const work = [
+  { index: '01', name: 'taskflow', description: '让多智能体工作流可以验证、恢复与重放。', tech: 'TypeScript', href: 'https://github.com/heggria/taskflow' },
+  { index: '02', name: 'Hermit', description: '为长期任务构建有边界、可追溯的本地内核。', tech: 'Python', href: 'https://pypi.org/project/hermit-agent/' },
+  { index: '03', name: 'Home Compass', description: '在真实约束中，把住房选择变成可解释的决策。', tech: 'Next.js', href: 'https://github.com/heggria/home-compass' },
+  { index: '04', name: 'SBTI Lab', description: '一次产品导向的网络人格测试实验。', tech: 'TypeScript', href: 'https://github.com/heggria/sbti-lab' },
+]
+---
+
+<BaseLayout>
+  <div class="page-width">
+    <section class="hero">
+      <p class="kicker">Independent notes on building, systems, and judgment</p>
+      <h1>把思考留下来，<br /><em>不只把功能做出来。</em></h1>
+      <div class="hero-detail">
+        <p>我是 Heggria，一个在北京做产品与系统的工程师。我写代码，也写判断、取舍，以及那些值得被保留下来的理由。</p>
+        <div class="hero-links"><a class="primary-button" href="/writing/">阅读文章 <span>↗</span></a><a href="https://github.com/heggria">GitHub ↗</a></div>
+      </div>
+    </section>
+
+    <section class="manifesto">
+      <p class="kicker">A working philosophy</p>
+      <blockquote>好的工作不只是能运行。它应该让假设可检查，让取舍可理解，也让下一个决定更容易做出。</blockquote>
+      <div class="manifesto-grid"><p><span>01</span>清晰本身就是功能。</p><p><span>02</span>约束塑造作品的性格。</p><p><span>03</span>证据比自信活得更久。</p></div>
+    </section>
+
+    <section class="section">
+      <div class="section-heading"><div><p class="kicker">Latest writing</p><h2>值得反复回看的想法。</h2></div><a href="/writing/">全部文章 ↗</a></div>
+      <div class="post-grid">
+        {featured.map((post, index) => post && <PostCard href={`/writing/${post.id}/`} title={post.data.title} description={post.data.description} date={post.data.date} duration={post.data.duration} featured={index === 0} index={index} />)}
+      </div>
+    </section>
+
+    <section class="section" id="work">
+      <div class="section-heading"><div><p class="kicker">Selected work</p><h2>想法，接受现实的检验。</h2></div><p>作品是哲学遇到阻力的地方。它们不是主页的主角，而是我如何思考的证据。</p></div>
+      <div class="work-list">
+        {work.map(item => <a class="work-row" href={item.href}><span class="work-index">{item.index}</span><strong>{item.name}</strong><span class="work-description">{item.description}</span><span class="work-tech">{item.tech}</span><span>↗</span></a>)}
+      </div>
+    </section>
+
+    <section class="section about-grid" id="about">
+      <div><p class="kicker">About</p><h2>工程师是实践，<br />写作者是需要。</h2></div>
+      <div class="about-copy"><p>我在北京的 MiniMax 工作，游走于智能体基础设施和全栈产品之间。常用的语言是 TypeScript、Python、Node.js 与 Vue；但我最在意的语言，是系统与试图理解它的人之间的那一种。</p><p>这里是一份公开笔记：关于约束为什么能改善决策，证据为什么重要，以及软件怎样才能解释自己。</p><div class="about-links"><a href="mailto:bshengtao@gmail.com">Email ↗</a><a href="https://github.com/heggria">GitHub ↗</a><a href="https://space.bilibili.com/20296120">Bilibili ↗</a><a href="/rss.xml">RSS ↗</a></div></div>
+    </section>
+  </div>
+</BaseLayout>
