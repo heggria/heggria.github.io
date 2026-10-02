@@ -1,82 +1,56 @@
 ---
 import '../styles/global.css'
-
-interface Props {
-  title?: string
-  description?: string
-  canonical?: string
-  type?: 'website' | 'article'
-}
-
-const {
-  title = 'Heggria — Builder & Writer',
-  description = '关于工程判断、系统、工具与那些值得被保留下来的思考。',
-  canonical = Astro.url.href,
-  type = 'website',
-} = Astro.props
-const pathname = Astro.url.pathname
+interface Props { title?: string; description?: string; canonical?: string; type?: 'website' | 'article' }
+const { title = 'Heggria · 个人网站', description = 'Heggria 的项目和技术笔记。目前在北京的 OpenDesign 做开发。', canonical = new URL(Astro.url.pathname, Astro.site).href, type = 'website' } = Astro.props
+const path = Astro.url.pathname
 ---
-
 <!doctype html>
 <html lang="zh-CN" data-theme="light">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="generator" content={Astro.generator} />
-    <meta name="theme-color" content="#f4f1e9" />
+    <meta name="theme-color" content="#f9f8f5" />
     <meta name="description" content={description} />
-    <meta property="og:type" content={type} />
-    <meta property="og:title" content={title} />
-    <meta property="og:description" content={description} />
-    <meta property="og:url" content={canonical} />
-    <meta property="og:site_name" content="Heggria" />
-    <meta property="og:image" content="https://heggria.github.io/avatar.png" />
-    <meta property="og:image:width" content="1024" />
-    <meta property="og:image:height" content="1024" />
-    <meta property="og:image:alt" content="Heggria 的插画头像" />
-    <meta name="twitter:card" content="summary" />
-    <meta name="twitter:title" content={title} />
-    <meta name="twitter:description" content={description} />
-    <meta name="twitter:image" content="https://heggria.github.io/avatar.png" />
-    <link rel="canonical" href={canonical} />
-    <link rel="icon" href="/favicon.png" type="image/png" />
+    <meta property="og:type" content={type} /><meta property="og:title" content={title} />
+    <meta property="og:description" content={description} /><meta property="og:url" content={canonical} />
+    <meta property="og:site_name" content="Heggria" /><meta property="og:image" content="https://heggria.github.io/avatar.jpg" />
+    <meta property="og:image:alt" content="Heggria 的头像" /><meta name="twitter:card" content="summary" />
+    <link rel="canonical" href={canonical} /><link rel="icon" href="/avatar.jpg" type="image/jpeg" />
     <link rel="alternate" type="application/rss+xml" title="Heggria 的文章" href="/rss.xml" />
     <link rel="sitemap" href="/sitemap-index.xml" />
     <script is:inline>
-      (() => {
-        const saved = localStorage.getItem('theme')
-        const dark = saved === 'dark' || (!saved && matchMedia('(prefers-color-scheme: dark)').matches)
-        document.documentElement.dataset.theme = dark ? 'dark' : 'light'
-      })()
+      (() => { let saved; try { saved = localStorage.getItem('theme') } catch {} const dark = saved === 'dark' || (!saved && matchMedia('(prefers-color-scheme: dark)').matches); document.documentElement.dataset.theme = dark ? 'dark' : 'light' })()
     </script>
     <title>{title}</title>
   </head>
   <body>
     <a class="skip-link" href="#content">跳到正文</a>
     <header class="site-header" data-pagefind-ignore>
-      <a class="wordmark" href="/" aria-label="Heggria 首页">Heggria<span>.</span></a>
+      <a class="wordmark" href="/" aria-label="Heggria 首页">h<span class="wordmark-dot">.</span></a>
       <nav aria-label="主导航">
-        <a class:list={[{ active: pathname.startsWith('/writing') }, 'nav-link']} href="/writing/">Writing</a>
-        <a class="nav-link" href="/#work">Work</a>
-        <a class:list={[{ active: pathname === '/about/' }, 'nav-link']} href="/about/">About</a>
+        <a href="/writing/" aria-current={path.startsWith('/writing') ? 'page' : undefined}>文章</a>
+        <a href="/work/" aria-current={path.startsWith('/work') ? 'page' : undefined}>项目</a>
+        <a href="/about/" aria-current={path.startsWith('/about') ? 'page' : undefined}>关于</a>
       </nav>
       <div class="header-actions">
-        <a class="search-link" href="/search/" aria-label="搜索文章">⌕ <span>Search</span></a>
-        <button class="theme-toggle" type="button" aria-label="切换深浅色主题"><span aria-hidden="true">◐</span></button>
+        <a class="icon-button" href="/search/" aria-label="搜索文章"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg></a>
+        <button class="icon-button theme-toggle" type="button" aria-label="切换到深色主题"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16Z" fill="currentColor"/></svg></button>
       </div>
     </header>
-    <main id="content" data-pagefind-body><slot /></main>
+    <main id="content"><slot /></main>
     <footer class="site-footer" data-pagefind-ignore>
-      <p>把工作做清楚，也把思考留下来。</p>
-      <p><a href="/rss.xml">RSS</a> · <a href="https://github.com/heggria">GitHub</a> · © 2024–{new Date().getFullYear()} Heggria</p>
+      <a href="/" class="footer-name">Heggria<span> / 北京</span></a>
+      <div><a href="https://github.com/heggria">GitHub ↗</a><a href="/rss.xml">RSS</a><a href="mailto:bshengtao@gmail.com">Email</a></div>
+      <span class="copyright">2022–{new Date().getFullYear()}</span>
     </footer>
     <script>
       const button = document.querySelector<HTMLButtonElement>('.theme-toggle')
-      button?.addEventListener('click', () => {
-        const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'
-        document.documentElement.dataset.theme = next
-        localStorage.setItem('theme', next)
-      })
+      const media = matchMedia('(prefers-color-scheme: dark)')
+      function label() { button?.setAttribute('aria-label', document.documentElement.dataset.theme === 'dark' ? '切换到浅色主题' : '切换到深色主题') }
+      label()
+      button?.addEventListener('click', () => { const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'; document.documentElement.dataset.theme = next; try { localStorage.setItem('theme', next) } catch {} label() })
+      media.addEventListener('change', () => { let saved; try { saved = localStorage.getItem('theme') } catch {} if (!saved) { document.documentElement.dataset.theme = media.matches ? 'dark' : 'light'; label() } })
     </script>
   </body>
 </html>

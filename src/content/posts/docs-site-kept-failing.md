@@ -1,14 +1,13 @@
 ---
-title: 文档站红了一天
+title: "文档站的安装与页面问题"
 date: 2026-07-06T00:00:00.000+08:00
-description: 同日接上了 Claude 和 OpenCode。记得更清楚的是 npm ci 崩了，按钮被代码窗挡住。
-duration: 3min
+description: "七月六号修了包管理、CI 和移动端布局，也接入了 Claude Code 与 OpenCode。"
 lang: zh
 tags: [taskflow, 文档, 踩坑]
 ---
 
-七月六号的提交记录不太好看。文档站从 npm 迁到 pnpm，CI 报 `Exit handler never called`，postinstall 和 `npm ci` 打架，移动端横着滑，hero 里的代码窗把按钮挡住。favicon、sitemap、hreflang 也是同一天补上的。
+七月六号，文档站从 npm 迁到 pnpm。当天记录了 CI 的 `Exit handler never called`、postinstall 与 `npm ci` 的冲突，还有移动端横向溢出、hero 代码窗遮住按钮的问题。favicon、sitemap 和 hreflang 也在这一天补上。
 
-功能其实不少。Claude Code 和 OpenCode 两个宿主进来了，可复用 flow 库有了第一层，可以从磁盘上的定义做 verify。这些更像「今天做成了什么」。
+同日还接入了 Claude Code 和 OpenCode，加入可复用 flow 库的第一层，并支持从磁盘上的定义做 verify。
 
-我记得更清楚的是部署红了又红。编排引擎的文档站打不开，对外就不存在。那天首先是让页面能活着发布。后来看自己的发版，会把「网站是否跟这个 commit 一起绿」算进去。
+功能和文档站需要一起检查。功能提交了，部署仍可能失败；部署通过了，页面也可能无法正常操作。后来检查发版时，我会一起看对应 commit 的网站构建结果。

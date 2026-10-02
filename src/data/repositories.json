@@ -1,0 +1,281 @@
+[
+  {
+    "name": "heggria",
+    "url": "https://github.com/heggria/heggria",
+    "description": "GitHub profile README.",
+    "homepage": "https://heggria.github.io/",
+    "archived": false,
+    "fork": false,
+    "language": "Python"
+  },
+  {
+    "name": "heggria.github.io",
+    "url": "https://github.com/heggria/heggria.github.io",
+    "description": "Personal blog built with Astro, with RSS and full-text search.",
+    "homepage": "https://heggria.github.io/",
+    "archived": false,
+    "fork": false,
+    "language": "Astro"
+  },
+  {
+    "name": "taskflow",
+    "url": "https://github.com/heggria/taskflow",
+    "description": "DAG runtime for coding-agent workflows with verification, resume, replay, and effect checks.",
+    "homepage": "https://heggria.github.io/taskflow/",
+    "archived": false,
+    "fork": false,
+    "language": "TypeScript"
+  },
+  {
+    "name": "flowgate",
+    "url": "https://github.com/heggria/flowgate",
+    "description": "macOS proxy client for sing-box with subscription, node, routing, and connection management.",
+    "homepage": null,
+    "archived": false,
+    "fork": false,
+    "language": "TypeScript"
+  },
+  {
+    "name": "home-compass",
+    "url": "https://github.com/heggria/home-compass",
+    "description": "Beijing neighborhood scorecards and a mortgage affordability calculator.",
+    "homepage": "https://home-compass-eight.vercel.app",
+    "archived": false,
+    "fork": false,
+    "language": "TypeScript"
+  },
+  {
+    "name": "awesome-ai-plugins",
+    "url": "https://github.com/heggria/awesome-ai-plugins",
+    "description": "A curated list of awesome plugins for AI assistants including Claude Code, OpenAI Codex / ChatGPT, Gemini, Antigravity, Pi / Oh My Pi, Grok, OpenCode and More.",
+    "homepage": "https://hol.org/registry/plugins",
+    "archived": false,
+    "fork": true,
+    "language": null
+  },
+  {
+    "name": "agent-usage-atlas",
+    "url": "https://github.com/heggria/agent-usage-atlas",
+    "description": "Archived CLI for turning local coding-agent logs into an HTML usage and cost dashboard.",
+    "homepage": "https://heggria.github.io/agent-usage-atlas/demo/",
+    "archived": true,
+    "fork": false,
+    "language": "Python"
+  },
+  {
+    "name": "selffield",
+    "url": "https://github.com/heggria/selffield",
+    "description": "Browser-local journal for recording experiences, reviewing evidence, and tracking changes over time.",
+    "homepage": "https://heggria.github.io/selffield/",
+    "archived": false,
+    "fork": false,
+    "language": "TypeScript"
+  },
+  {
+    "name": "awesome-production-agentic-systems",
+    "url": "https://github.com/heggria/awesome-production-agentic-systems",
+    "description": "A curated list of awesome open source libraries to deploy, monitor, version and scale agentic applications and systems",
+    "homepage": "https://ethicalml.github.io/awesome-production-agentic-systems/",
+    "archived": true,
+    "fork": true,
+    "language": null
+  },
+  {
+    "name": "awesome-ai-agents",
+    "url": "https://github.com/heggria/awesome-ai-agents",
+    "description": "A list of AI autonomous agents",
+    "homepage": "https://e2b.dev/docs",
+    "archived": true,
+    "fork": true,
+    "language": null
+  },
+  {
+    "name": "awesome-llm-agents",
+    "url": "https://github.com/heggria/awesome-llm-agents",
+    "description": "A curated list of awesome LLM agents frameworks.",
+    "homepage": "",
+    "archived": true,
+    "fork": true,
+    "language": null
+  },
+  {
+    "name": "awesome-mcp-servers",
+    "url": "https://github.com/heggria/awesome-mcp-servers",
+    "description": "A collection of MCP servers.",
+    "homepage": "https://glama.ai/mcp/servers",
+    "archived": true,
+    "fork": true,
+    "language": null
+  },
+  {
+    "name": "awesome-local-first",
+    "url": "https://github.com/heggria/awesome-local-first",
+    "description": "A collection of awesome local-first projects including offline-first and collaboration functionality",
+    "homepage": "",
+    "archived": true,
+    "fork": true,
+    "language": null
+  },
+  {
+    "name": "awesome-cli-coding-agents",
+    "url": "https://github.com/heggria/awesome-cli-coding-agents",
+    "description": "Curated directory of terminal-native AI coding agents and the harnesses that orchestrate them. Covers open-source tools (Pi, OpenCode, Aider, Goose), platform agents (Claude Code, Codex, Gemini CLI), parallel runners, autonomous loops, and agent infrastructure. ",
+    "homepage": "",
+    "archived": true,
+    "fork": true,
+    "language": null
+  },
+  {
+    "name": "claude-code",
+    "url": "https://github.com/heggria/claude-code",
+    "description": "Claude Code Snapshot for Research. All original source code is the property of Anthropic.",
+    "homepage": "https://x.com/Fried_rice/status/2038894956459290963",
+    "archived": true,
+    "fork": true,
+    "language": null
+  },
+  {
+    "name": "paperclip",
+    "url": "https://github.com/heggria/paperclip",
+    "description": "Open-source orchestration for zero-human companies",
+    "homepage": "https://paperclip.ing",
+    "archived": true,
+    "fork": true,
+    "language": null
+  },
+  {
+    "name": "hindsight",
+    "url": "https://github.com/heggria/hindsight",
+    "description": "Hindsight: Agent Memory That  Learns",
+    "homepage": "https://hindsight.vectorize.io/",
+    "archived": true,
+    "fork": true,
+    "language": null
+  },
+  {
+    "name": "jcode",
+    "url": "https://github.com/heggria/jcode",
+    "description": "Coding Agent Harness",
+    "homepage": "",
+    "archived": true,
+    "fork": true,
+    "language": null
+  },
+  {
+    "name": "Lianliankan",
+    "url": "https://github.com/heggria/Lianliankan",
+    "description": "基于原生 JavaScript 的连连看小游戏（已归档）。",
+    "homepage": null,
+    "archived": true,
+    "fork": false,
+    "language": "JavaScript"
+  },
+  {
+    "name": "frontend-config",
+    "url": "https://github.com/heggria/frontend-config",
+    "description": "Archived placeholder for frontend configuration notes; README only.",
+    "homepage": null,
+    "archived": true,
+    "fork": false,
+    "language": null
+  },
+  {
+    "name": "lext",
+    "url": "https://github.com/heggria/lext",
+    "description": "Archived proposal for a Vue rich-text editor based on Lexical; README only.",
+    "homepage": "",
+    "archived": true,
+    "fork": false,
+    "language": null
+  },
+  {
+    "name": "cursor-code-ai-plugin",
+    "url": "https://github.com/heggria/cursor-code-ai-plugin",
+    "description": "Archived VS Code/Cursor extension estimating human and AI code edits with heuristics.",
+    "homepage": null,
+    "archived": true,
+    "fork": false,
+    "language": "TypeScript"
+  },
+  {
+    "name": "VueScope",
+    "url": "https://github.com/heggria/VueScope",
+    "description": "Archived prototype for analyzing Vue component dependencies; web UI scaffold only.",
+    "homepage": null,
+    "archived": true,
+    "fork": false,
+    "language": "TypeScript"
+  },
+  {
+    "name": "Monokit",
+    "url": "https://github.com/heggria/Monokit",
+    "description": "Archived CLI for pnpm monorepos: scaffolding, task execution, and configuration sync.",
+    "homepage": null,
+    "archived": true,
+    "fork": false,
+    "language": "TypeScript"
+  },
+  {
+    "name": "local-rag-mcp",
+    "url": "https://github.com/heggria/local-rag-mcp",
+    "description": "Archived MCP server for indexing and searching local code with embeddings and keywords.",
+    "homepage": null,
+    "archived": true,
+    "fork": false,
+    "language": "TypeScript"
+  },
+  {
+    "name": "llm-borad-cli",
+    "url": "https://github.com/heggria/llm-borad-cli",
+    "description": "Archived CLI for serving local embedding and reranker models on Apple Silicon.",
+    "homepage": null,
+    "archived": true,
+    "fork": false,
+    "language": "Python"
+  },
+  {
+    "name": "web-surfing-cli",
+    "url": "https://github.com/heggria/web-surfing-cli",
+    "description": "Archived web-search and page-fetching CLI with MCP tools and a Claude Code plugin.",
+    "homepage": null,
+    "archived": true,
+    "fork": false,
+    "language": "TypeScript"
+  },
+  {
+    "name": "mcx",
+    "url": "https://github.com/heggria/mcx",
+    "description": "Archived CLI and Claude Code plugin for discovering and calling MCP tools.",
+    "homepage": null,
+    "archived": true,
+    "fork": false,
+    "language": "TypeScript"
+  },
+  {
+    "name": "homebrew-tap",
+    "url": "https://github.com/heggria/homebrew-tap",
+    "description": "Homebrew formulae for agent-usage-atlas and hermit-agent.",
+    "homepage": null,
+    "archived": false,
+    "fork": false,
+    "language": "Ruby"
+  },
+  {
+    "name": "SchoolCardManager",
+    "url": "https://github.com/heggria/SchoolCardManager",
+    "description": "Archived campus card management project built with Vue and Django.",
+    "homepage": null,
+    "archived": true,
+    "fork": false,
+    "language": "Python"
+  },
+  {
+    "name": "blog",
+    "url": "https://github.com/heggria/blog",
+    "description": "Archived technical notes on JavaScript, React, TypeScript, and frontend development.",
+    "homepage": null,
+    "archived": true,
+    "fork": false,
+    "language": null
+  }
+]

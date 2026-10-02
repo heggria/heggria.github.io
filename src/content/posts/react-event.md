@@ -1,36 +1,37 @@
 ---
-title: 谈谈 React 事件系统
+title: React 事件系统阅读笔记
 date: 2022-07-15T16:00:00.000+00:00
-duration: 10min
 ---
 
-# React 事件系统
+这篇是 2022 年整理的 React 事件系统笔记。后半部分保留了旧版批量更新机制的源码摘录与示意代码，读的时候要区分它们和项目实际使用的 React 版本。
 
-我们都知道三种浏览器的事件模型：
+## 浏览器事件模型
 
-- **DOM0级事件模型**：这种模型不会传播，所以没有事件流的概念，所有浏览器都兼容这种方式。直接在dom对象上注册事件名称，就是DOM0写法
+先列出当时笔记里的三种事件模型：
+
+- **DOM0 级事件处理**：直接在 DOM 对象的 `onclick` 等属性上设置处理函数。事件传播需要另看事件本身，不能由这个写法推断“不会传播”
 - **DOM2级事件模型**：这种模型分为三个阶段：捕获阶段、目标阶段、冒泡阶段。当事件触发时，Document节点接收事件一直向下捕获至目标节点，又从目标节点向上冒泡至Document节点的顺序。使用addEventListener方法添加事件监听器，可以指定在捕获阶段或冒泡阶段执行回调函数
 - **IE事件模型**：这种模型只有冒泡阶段，没有捕获阶段。使用attachEvent方法添加事件监听器，不支持useCapture参数，只能在冒泡阶段执行回调函数
 
-但我们对日常编写的React代码中的事件系统了解的似乎并不多，我们只知道React的事件封装了浏览器的各种事件并暴露出来，并不知道这些事件之间的联系以及其中的一些坑，今天我带大家来了解一下，React的事件系统。
+平时写 React 事件处理函数，不太需要直接接触这些差异。但混用原生事件时，监听位置、执行顺序和传播行为就会影响结果。
 
 # 事件
 
-我们先来回顾一下经典的DOM2事件流
+先看 DOM2 事件流：
 
 ![image.png](/images/react-event/1.png)
 
-回顾完之后，我们来看看DOM的两个关键定义
+与后面的例子有关的两个接口是 `Event` 和 `EventTarget`。
 
 **事件**是某事发生的信号。所有的 DOM 节点都生成这样的信号（但事件不仅限于 DOM）。常见的事件有 click、keydown 等。
 
-通过**事件捕获器**我们可以分配一个处理程序给对应的信号，使得浏览器和 JS 可以进行交互。当事件发生时，浏览器会创建一个**事件对象**，将详细信息放入其中，并将其作为参数传递给处理程序。
+通过**事件处理函数**响应这些信号。当事件发生时，浏览器会创建一个**事件对象**，将详细信息放入其中，并将其作为参数传递给处理程序。
 
 - **Event：Event 接口表示发生在 DOM 中的事件，下面列了几个有意思的属性**
   - [`Event.isTrusted`](https://developer.mozilla.org/en-US/docs/Web/API/Event/isTrusted)：是浏览器触发（用户操作或者API）还是脚本触发（编程调用、自定义事件）
   - [`Event.composed`](https://developer.mozilla.org/en-US/docs/Web/API/Event/composed)：是否可以跨越 `shadow dom` 的边界进行冒泡
   - [`Event.currentTarget`](https://developer.mozilla.org/en-US/docs/Web/API/Event/currentTarget)：对事件的当前注册目标的引用
-  - [`Event.target`](https://developer.mozilla.org/en-US/docs/Web/API/Event/target)：对事件的原始注册目标的引用
+  - [`Event.target`](https://developer.mozilla.org/en-US/docs/Web/API/Event/target)：事件最初派发到的目标
 - **EventTarget：事件目标，是任意一个可以接收事件并可能具有事件侦听器的对象（** [`Element`](https://developer.mozilla.org/en-US/docs/Web/API/Element), and its children, as well as [`Document`](https://developer.mozilla.org/en-US/docs/Web/API/Document) and [`Window`](https://developer.mozilla.org/en-US/docs/Web/API/Window) **），一些事件目标也支持通过一个** `onevent` **属性设置事件处理程序**
   - **EventTarget** 具有以下几个方法
     - [`EventTarget.addEventListener()`](https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener)
@@ -61,11 +62,11 @@ duration: 10min
 </ActionIcon>
 ```
 
-了解完这些之后，让我们来看看react的事件系统：
+接下来是 React 的合成事件与事件委托。
 
-React 的事件不是普通的事件，一个事件对应着一个或者多个原生事件，也被称为合成事件。同时React 贯彻了事件委托的理念，将所有事件统一绑定在 `container` 上面。
+React 暴露给处理函数的是合成事件，对应底层的原生事件。原笔记用 `container` 上的事件委托来理解它，但“所有事件都绑定在同一个位置”只能作为简化模型。
 
-> 原生事件（阻止冒泡）会阻止合成事件的执行，合成事件（阻止冒泡）不会阻止原生事件的执行。
+原生与合成事件混用时，阻止传播的结果要结合监听位置和执行顺序判断。原笔记把它概括成单向的阻止关系，容易漏掉这些条件。
 
 **为什么要这样做**
 
@@ -74,19 +75,19 @@ React 的事件不是普通的事件，一个事件对应着一个或者多个�
 
 # 避坑
 
-尽量避免在 React 中混用合成事件和原生 DOM 事件。另外，用 reactEvent.nativeEvent. stopPropagation() 来阻止冒泡是不行的。**阻止 React 事件冒泡的行为只能用于 React 合成事件系统中，且没办法阻止原生事件的冒泡。反之，在原生事件中的阻止冒泡行为，却可以阻止 React 合成事件的传播。**
+我倾向于少混用合成事件和原生 DOM 事件。确实需要混用时，先确认处理函数挂在哪个节点，再看 `stopPropagation()` 发生在传播的哪一步，不能把一次观察的结果直接套到其他监听位置。
 
-实际上，React 的合成事件系统只是原生 DOM 事件系统的一个子集。它仅仅实现了 DOM Level 3 的事件接口，并且**统一了浏览器间的兼容问题**。有些事件 React 并没有实现，或者受某些限制没办法去实现，比如 window 的 resize 事件。
+React 的合成事件提供了相近的事件接口，并处理浏览器差异，但不是任意原生事件都能按同一方式绑定到组件上。例如监听 window 的 `resize`，就需要按原生事件的目标来处理。
 
 # 实现机制
 
-**事件委托，React 并不会把事件处理函数直接绑定到真实的节点上，而是把所有事件绑定到结构的最外层，使用一个统一的事件监听器（利用事件冒泡原理，任何节点触发的事件都能冒泡到最外层元素）** 。
+事件委托的思路是：由外层监听器处理传播到这里的事件，再找到对应组件的处理函数。下面沿着这个简化模型整理流程，具体事件仍要看源码中的监听策略。
 
-这个事件监听器上维持了一个映射来保存所有组件内部的事件监听和处理函数。当组件挂载或卸载时，只是在这个统一的事件监听器上插入或删除一些对象；当事件发生时，首先被这个统一的事件监听器处理，然后在映射里找到真正的事件处理函数并调用。这样做简化了事件处理和回收机制，效率也有很大提升。
+这个事件监听器上维持了一个映射来保存所有组件内部的事件监听和处理函数。当组件挂载或卸载时，只是在这个统一的事件监听器上插入或删除一些对象；当事件发生时，首先被这个统一的事件监听器处理，然后在映射里找到真正的事件处理函数并调用。这样把事件分发和处理函数的管理集中起来。
 
-## 批量更新
+## 旧版批量更新机制
 
-在我们用合成事件调用`setState`时，实际上React会通过`batchedEventUpdates`函数包一层我们的`onBtnClick`函数，这个过程会暂时改变`executionContext`的值，让React以异步的方式进行更新。这就是为什么在合成事件里连续调用`setState`，React只会进行一次更新的原因。
+下面的旧版机制通过 `batchedEventUpdates` 包裹事件处理函数，并暂时改变 `executionContext`。连续调用状态更新时，React 可以先收集任务再一起处理。这里关注的是批量更新，不能把它简单等同于所有更新都是异步的。
 
 ```tsx
 function handleButtonClick() {
@@ -118,7 +119,7 @@ const handleBatchedEventUpdates = wrapBatchedUpdates
 
 一旦函数执行完毕，`executionContext`会恢复原状。但如果我们的`setState`操作在如`setTimeout`这样的异步函数中执行，由于合成事件已经执行完毕，`executionContext`已经恢复，所以`setTimeout`中的`setState`会立即执行更新。
 
-React17引入了`unstable_batchedUpdates` API，允许我们在异步任务中也能使用批量更新的特性。
+旧笔记还记录了 `unstable_batchedUpdates`，用于手动包裹需要批量处理的更新。下面保留导出的示意：
 
     exports.unstable_batchedUpdates = batchedUpdates;
 
@@ -161,7 +162,7 @@ function scheduleUpdateOnFiber(fiber, lane, eventTime) {
 
 ## 批量更新&同步更新
 
-在React控制的场景下，比如合成事件，`setState`操作是批量更新的。比如在一个按钮点击事件中，虽然调用了两次`setCount`，但在控制台只会看到一次更新的打印。
+继续看事件处理中连续更新的意图。下面两个例子的变量名没有完全对齐，也没有运行验证，因此不能据此确定控制台会打印几次。
 
 ```tsx
 function ClickCounter() {
@@ -180,7 +181,7 @@ function ClickCounter() {
 }
 ```
 
-而在异步任务，如`setTimeout`或Promise回调中，`setState`是同步更新的，所以点击按钮后，控制台会打印两次更新。
+下面继续用原笔记里的旧版机制对比 `setTimeout` 中的更新。示例没有经过运行验证，变量名也没有完全对齐，适合看意图，不适合直接复制。
 
 ```tsx
 function ClickCounter() {

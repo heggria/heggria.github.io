@@ -1,14 +1,13 @@
 ---
-title: taskflow 第一天
+title: "taskflow 从 Pi 上的多步流程开始"
 date: 2026-06-04T00:00:00.000+08:00
-description: 只服务 Pi。没有五宿主，没有文档站。进度条、心跳、spinner 当天都修过。
-duration: 3min
+description: "六月四号的 pi-taskflow 只支持 Pi，当天修了进度显示，并加入可以暂停流程的 gate。"
 lang: zh
 tags: [taskflow, Pi, 编排]
 ---
 
-[taskflow](https://github.com/heggria/taskflow) 第一天只服务 Pi。没有五个宿主，没有文档站，没有 TypeScript DSL。我想在一个已经在用的 agent 里，把多步工作写成能跑完的流程。
+[taskflow](https://github.com/heggria/taskflow) 六月四号的第一版叫 pi-taskflow，只支持 Pi。我想先在已经使用的 agent 里，把多步工作写成可执行的流程。那时还没有多宿主支持、文档站和 TypeScript DSL。
 
-当天版本跳得很快。进度条对不齐，心跳丢，spinner 转错，扇出完成了界面却显示 0。这些都不体面。它们比「先设计平台」靠近真实使用。
+当天修了几处进度显示：进度条不对齐、心跳丢失、spinner 状态不对，扇出任务完成后界面仍显示 0。流程的执行结果和界面显示需要一致。
 
-晚上才有真正能停住的 gate：流程可以在某个条件上挂住，而不是一路聊到看起来像结束。名字当时叫 pi-taskflow。这个名字后来不够用。第一天够用。
+晚上加了 gate，可以在指定条件处暂停流程。之后接入更多宿主，项目才改名为 taskflow。

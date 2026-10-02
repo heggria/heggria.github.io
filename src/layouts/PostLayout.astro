@@ -1,35 +1,21 @@
 ---
 import BaseLayout from './BaseLayout.astro'
-
-interface Props {
-  title: string
-  description?: string
-  date: Date
-  duration?: string
-  tags?: string[]
-  canonical: string
-}
-
-const { title, description = title, date, duration, tags = [], canonical } = Astro.props
-const formattedDate = new Intl.DateTimeFormat('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' }).format(date)
+import { formatDate } from '../lib/posts'
+interface Props { title: string; description?: string; date: Date; minutes: number; tags?: string[]; canonical: string; headings?: { depth: number; slug: string; text: string }[] }
+const { title, description = title, date, minutes, tags = [], canonical, headings = [] } = Astro.props
+const toc = headings.filter(h=>h.depth>=1 && h.depth<=3)
+const tocRoot = Math.min(...toc.map(h=>h.depth))
 ---
-
 <BaseLayout title={`${title} — Heggria`} description={description} canonical={canonical} type="article">
-  <article class="post-shell">
-    <header class="post-header">
-      <a class="post-back" href="/writing/">← Writing</a>
-      <h1>{title}</h1>
-      {description !== title && <p class="post-deck">{description}</p>}
-      <div class="post-meta">
-        <time datetime={date.toISOString()}>{formattedDate}</time>
-        {duration && <span>{duration}</span>}
-        {tags.map(tag => <span>#{tag}</span>)}
-      </div>
-    </header>
-    <div class="prose"><slot /></div>
-    <footer class="post-footer">
-      <p>如果这篇文章让你想到什么，欢迎通过 <a href="mailto:bshengtao@gmail.com">邮件</a> 或 <a href="https://github.com/heggria">GitHub</a> 找到我。</p>
-      <a href="/writing/">继续阅读 →</a>
-    </footer>
+  <article class="article-page" data-pagefind-body>
+    <header class="article-header"><a class="back-link" href="/writing/" data-pagefind-ignore>← 全部文章</a><div class="article-meta" data-pagefind-ignore><time datetime={date.toISOString()}>{formatDate(date)}</time><span>约 {minutes} 分钟</span>{tags.slice(0,3).map(tag=><span>{tag}</span>)}</div><h1 data-pagefind-meta="title">{title}</h1>{description!==title&&<p class="article-deck">{description}</p>}</header>
+    <div class:list={['article-grid',{'has-toc':toc.length>=3}]}>
+      {toc.length>=3&&<aside class="article-toc" data-pagefind-ignore><details open><summary>这篇写了什么</summary><nav aria-label="文章目录">{toc.map(h=><a class:list={[{'toc-child':h.depth>tocRoot}]} href={`#${h.slug}`}>{h.text}</a>)}</nav></details></aside>}
+      <div class="prose"><slot /></div>
+    </div>
+    <footer class="article-footer" data-pagefind-ignore><a href="/writing/">← 回到文章列表</a><a href="mailto:bshengtao@gmail.com">发现问题？写信给我 ↗</a></footer>
   </article>
+  <script>
+    document.querySelectorAll<HTMLElement>('.prose pre').forEach(pre=>{const button=document.createElement('button');button.type='button';button.className='copy-code';button.textContent='复制';button.setAttribute('aria-label','复制这段代码');button.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(pre.querySelector('code')?.textContent||'');button.textContent='已复制'}catch{button.textContent='请选中后复制'}setTimeout(()=>{button.textContent='复制'},2000)});pre.append(button)})
+  </script>
 </BaseLayout>

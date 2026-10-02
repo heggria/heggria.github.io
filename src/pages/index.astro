@@ -2,53 +2,29 @@
 import { getCollection } from 'astro:content'
 import BaseLayout from '../layouts/BaseLayout.astro'
 import PostCard from '../components/PostCard.astro'
-
-const posts = (await getCollection('posts', ({ data }) => !data.draft))
-  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
-const philosophyIds = ['work-should-outlive-chat', 'trust-comes-from-boundaries', 'small-tools-sharp-edges']
-const featured = philosophyIds.map(id => posts.find(post => post.id === id)).filter(Boolean)
-const work = [
-  { index: '01', name: 'taskflow', description: '让多智能体工作流可以验证、恢复与重放。', tech: 'TypeScript', href: 'https://github.com/heggria/taskflow' },
-  { index: '02', name: 'Hermit', description: '为长期任务构建有边界、可追溯的本地内核。', tech: 'Python', href: 'https://pypi.org/project/hermit-agent/' },
-  { index: '03', name: 'Home Compass', description: '在真实约束中，把住房选择变成可解释的决策。', tech: 'Next.js', href: 'https://github.com/heggria/home-compass' },
-  { index: '04', name: 'SelfField', description: '从真实经历与矛盾中，形成一面随时间变化的个人镜像。', tech: 'React', href: 'https://heggria.github.io/selffield/' },
+import { published, newestFirst } from '../lib/posts'
+const posts = (await getCollection('posts')).filter(published).sort(newestFirst)
+const projects = [
+  { name: 'taskflow', kind: '个人开源', description: '给 coding agent 编排任务，查看执行记录，重放或重算其中一部分。', href: 'https://github.com/heggria/taskflow', mark: '↳', tech: 'TypeScript · Beta' },
+  { name: 'OpenDesign', kind: '工作', description: '目前所在的团队，做开源、本地优先的设计工具。', href: 'https://github.com/nexu-io/open-design', mark: '◇', tech: '设计工具' },
+  { name: 'SelfField', kind: '个人实验', description: '记录经历和相互矛盾的想法，不给自己归一个人格类型。', href: 'https://heggria.github.io/selffield/', mark: '◎', tech: 'React' },
 ]
 ---
-
 <BaseLayout>
   <div class="page-width">
-    <section class="hero">
-      <p class="kicker">Independent notes on building, systems, and judgment</p>
-      <h1>把思考留下来，<br /><em>不只把功能做出来。</em></h1>
-      <div class="hero-detail">
-        <p>我是 Heggria，一个在北京做产品与系统的工程师。我写代码，也写判断、取舍，以及那些值得被保留下来的理由。</p>
-        <div class="hero-links"><a class="primary-button" href="/writing/">阅读文章 <span>↗</span></a><a href="https://github.com/heggria">GitHub ↗</a></div>
-      </div>
+    <section class="home-intro">
+      <div class="intro-main"><p class="eyebrow">个人网站 / NOTES SINCE 2022</p><h1>Heggria<span class="accent">.</span></h1><p class="intro-description">在北京写代码，<br>目前在 <a href="https://github.com/nexu-io/open-design">OpenDesign</a>。</p><p class="intro-note">这里放我做的项目，以及从 2022 年开始写的技术笔记。</p></div>
+      <aside class="intro-aside"><div class="portrait-frame"><img src="/avatar.jpg" alt="Heggria 的头像" width="208" height="208" fetchpriority="high"/><span class="portrait-caption">HEGGRIA / BEIJING</span></div><a class="text-link" href="/about/">多了解一点 ↗</a></aside>
     </section>
-
-    <section class="manifesto">
-      <p class="kicker">A working philosophy</p>
-      <blockquote>好的工作不只是能运行。它应该让假设可检查，让取舍可理解，也让下一个决定更容易做出。</blockquote>
-      <div class="manifesto-grid"><p><span>01</span>清晰本身就是功能。</p><p><span>02</span>约束塑造作品的性格。</p><p><span>03</span>证据比自信活得更久。</p></div>
+    <section class="home-projects" id="work" aria-labelledby="work-title">
+      <div class="section-label"><h2 id="work-title">最近在做</h2><a href="/work/">所有项目 ↗</a></div>
+      <div class="project-trio">{projects.map(p=><a class="project-tile" href={p.href}><span class="project-top"><span class="project-symbol" aria-hidden="true">{p.mark}</span><span>{p.kind}</span><span class="external-arrow" aria-hidden="true">↗</span></span><h3>{p.name}</h3><p>{p.description}</p><span class="project-tech">{p.tech}</span></a>)}</div>
     </section>
-
-    <section class="section">
-      <div class="section-heading"><div><p class="kicker">Latest writing</p><h2>值得反复回看的想法。</h2></div><a href="/writing/">全部文章 ↗</a></div>
-      <div class="post-grid">
-        {featured.map((post, index) => post && <PostCard href={`/writing/${post.id}/`} title={post.data.title} description={post.data.description} date={post.data.date} duration={post.data.duration} featured={index === 0} index={index} />)}
-      </div>
+    <section class="home-writing" aria-labelledby="writing-title">
+      <div class="section-label"><h2 id="writing-title">最近的文章 <span class="count">{posts.length}</span></h2><a href="/writing/">全部文章 ↗</a></div>
+      <div>{posts.slice(0,6).map(post=><PostCard post={post} />)}</div>
+      <a class="archive-link" href="/writing/">往前翻翻 <span>2022 — {new Date().getFullYear()} ↗</span></a>
     </section>
-
-    <section class="section" id="work">
-      <div class="section-heading"><div><p class="kicker">Selected work</p><h2>想法，接受现实的检验。</h2></div><p>作品是哲学遇到阻力的地方。它们不是主页的主角，而是我如何思考的证据。</p></div>
-      <div class="work-list">
-        {work.map(item => <a class="work-row" href={item.href}><span class="work-index">{item.index}</span><strong>{item.name}</strong><span class="work-description">{item.description}</span><span class="work-tech">{item.tech}</span><span>↗</span></a>)}
-      </div>
-    </section>
-
-    <section class="section about-grid" id="about">
-      <div><p class="kicker">About</p><h2>工程师是实践，<br />写作者是需要。</h2></div>
-      <div class="about-copy"><p>我在北京的 OpenDesign 工作，游走于智能体基础设施和全栈产品之间。常用的语言是 TypeScript、Python、Node.js 与 Vue；但我最在意的语言，是系统与试图理解它的人之间的那一种。</p><p>这里是一份公开笔记：关于约束为什么能改善决策，证据为什么重要，以及软件怎样才能解释自己。</p><div class="about-links"><a href="mailto:bshengtao@gmail.com">Email ↗</a><a href="https://github.com/heggria">GitHub ↗</a><a href="https://space.bilibili.com/20296120">Bilibili ↗</a><a href="/rss.xml">RSS ↗</a></div></div>
-    </section>
+    <section class="home-contact"><p>想交流某个项目或文章？</p><a href="mailto:bshengtao@gmail.com">给我写邮件 ↗</a></section>
   </div>
 </BaseLayout>

@@ -1,20 +1,19 @@
 ---
-title: 前端工程之包管理 - npm/yarn/pnpm
+title: npm、Yarn、pnpm 的依赖管理笔记
 date: 2022-08-03T16:00:00.000+00:00
-duration: 20min
 ---
 
-程序员实现某个功能，不会从零开始开发，都要基于大量第三方已经写好的功能模块，进行组装、扩展。借助开源力量，大量重复的有用的功能，被分成一个个单独的小模块（包），程序员之间可以进行共享，共同维护，测试、更新、添加更多新的功能。
+这篇是 2022 年整理的包管理笔记，主要参考 npm v8 文档，并回顾 npm 早期版本、Yarn Classic 和 pnpm 的依赖布局。例子里的 lockfile 结构与安装机制保留当时语境。
 
-这篇文章将主要介绍 `npm`、`yarn`、`pnpm` 三种包管理器，以及 `monorepo`。
+我想弄清楚的不是安装命令怎么写，而是依赖装在哪里、版本如何固定，以及项目为什么能访问到没声明的包。最后也记了一点 Monorepo。
 
 # NPM
 
-任何现代化的前端工程，都需要借助 npm 来管理项目中大量的依赖包。npm 作为 node.js 的默认包管理器，使用人数最多。
+npm 是 Node.js 默认附带的包管理器。先从 `package.json` 和依赖布局看起。
 
 ## `package.json`
 
-首先，我们来认识一下 `package.json`。`package.json` 作为前端工程的配置文件，描述了项目和依赖包信息，是至关重要的存在。
+`package.json` 描述项目、依赖和脚本等配置。
 
 [package.json | npm Docs](https://docs.npmjs.com/cli/v8/configuring-npm/package-json)
 
@@ -26,17 +25,17 @@ https://github.com/npm/node-semver
 
 ### `peerDependencies`
 
-`peerDependencies` 标识其依赖于宿主环境的依赖，其安装的依赖树是扁平的
+`peerDependencies` 声明包对宿主依赖版本的要求。下面是当时记录的安装关系；第一条容易被理解成忽略所有约束，不能按这个字面意思配置项目。具体安装和冲突处理需结合 npm 版本与参数。
 
 - 如果用户显式依赖了核心库，则可以忽略各插件的 `peerDependency` 声明
 - 如果用户没有显式依赖核心库，则按照插件 `peerDependencies` 中声明的版本将库安装到项目根目录中
 - 当用户依赖的版本、各插件依赖的版本之间不相互兼容，会报错让用户自行修复
 
-我们在编写开源包的时候，要尽量把依赖写在这里面，防止宿主环境和依赖包依赖不同出现的各种问题。
+编写插件或组件库时，需要区分哪些依赖由宿主提供，哪些属于包自己的实现，不能把所有依赖都放到这里。
 
 ### `devDependencies`
 
-如果有人计划在他们的工程中使用你的模块，那么他们可能不希望或不需要下载和构建您使用的外部测试或文档框架。在这种情况下，最好将这些附加项映射到 `devDependencies` 对象中。
+测试、文档和开发工具通常属于 `devDependencies`。使用这个包的项目，不需要把这些开发依赖一起装进来。
 
 这些东西将在从包的根目录执行 `npm link` 或 `npm install` 时安装，并且可以像任何其他 npm 配置参数一样进行管理。对于不特定于平台的构建步骤，例如将 CoffeeScript 或其他语言编译为 JavaScript，请使用 prepare 脚本来执行此操作，并将所需的包设置为 `devDependency`。
 
@@ -65,7 +64,7 @@ https://github.com/npm/node-semver
 
     - `version` 版本必须可由 `node-semver` 解析
 
-- `description` `keywords` `homepage` `bugs` `license` `author` \*\*\*\*`contributors` `funding` 项目信息
+- `description` `keywords` `homepage` `bugs` `license` `author` `contributors` `funding` 项目信息
 - `engines` 环境版本、`os` 运行系统、`cpu` 运行 CPU
 - `files` 作为依赖包时安装的必须具有的文件
 - `publishConfig` 发布时使用的 `npm` 配置值 [config | npm Docs](https://docs.npmjs.com/cli/v8/using-npm/config)
@@ -83,16 +82,16 @@ https://github.com/npm/node-semver
 
 ### **嵌套结构**
 
-在 `npm` 的**早期版本**，`npm` 处理依赖的方式简单粗暴，以递归的形式严格按照 `package.json` 结构以及子依赖包的 `package.json` 结构将依赖安装到他们各自的 `node_modules` 中。直到有子依赖包不在依赖其他模块。
+在 `npm` 的**早期版本**，`npm` 处理依赖的方式简单粗暴，以递归的形式严格按照 `package.json` 结构以及子依赖包的 `package.json` 结构将依赖安装到他们各自的 `node_modules` 中。直到某个依赖不再依赖其他模块。
 
 这样的方式优点很明显， `node_modules` 的结构和 `package.json` 结构一一对应，层级结构明显，并且保证了每次安装目录结构都是相同的。
 
-但是，试想一下，如果你依赖的模块非常之多，你的 `node_modules` 将非常庞大，嵌套层级非常之深。
+依赖多起来之后，重复文件和很深的路径就成了问题。
 
 ![截屏2022-08-05 13.51.23.png](/images/package-management-0-0.png#pic_center)
 
 - 在不同层级的依赖中，可能引用了同一个模块，导致大量冗余。
-- 在 `Windows` 系统中，文件路径最大长度为260个字符，嵌套层级过深可能导致不可预知的问题。
+- 当时笔记关注 Windows 的传统 260 字符路径限制，嵌套层级过深可能遇到问题。这里不能把 260 字符当成所有 Windows 配置的统一上限。
 
 ### 扁平结构
 
@@ -103,7 +102,7 @@ https://github.com/npm/node-semver
 对应的，如果我们在项目代码中引用了一个模块，模块查找流程如下：
 
 - 在当前模块路径下搜索
-- 在当前模块 `node_modules` 路径下搜素
+- 在当前模块 `node_modules` 路径下搜索
 - 在上级模块的 `node_modules` 路径下搜索
 - ...
 - 直到搜索到全局路径中的 `node_modules`
@@ -124,7 +123,7 @@ https://github.com/npm/node-semver
 
 为了解决 `npm install` 的不确定性问题，在 `npm 5.x` 版本新增了 `package-lock.json` 文件，而安装方式还沿用了 `npm 3.x` 的扁平化的方式。
 
-`package-lock.json` 的作用是锁定依赖结构，即只要你目录下有 `package-lock.json` 文件，那么你每次执行 `npm install` 后生成的 `node_modules` 目录结构一定是完全相同的。
+`package-lock.json` 记录解析后的依赖，用来提高安装结果的可重复性。环境和安装参数仍可能影响结果，不能把 lockfile 当成任何情况下目录都完全相同的保证。下面看一个早期格式的例子。
 
 ```json
 // package.json
@@ -191,11 +190,7 @@ https://github.com/npm/node-semver
 
 这里注意，并不是所有的子依赖都有 `dependencies` 属性，只有子依赖的依赖和当前已安装在根目录的 `node_modules` 中的依赖冲突之后，才会有这个属性。
 
-<aside>
-👉 把 `package-lock.json` 文件提交到代码版本仓库，保证所有团队开发者以及 `CI` 环节可以在执行 `npm install` 时安装的依赖版本都是一致的。
-在开发一个 `npm` 包时，你的 `npm` 包是需要被其他仓库依赖的，由于上面我们讲到的扁平安装机制，如果你锁定了依赖包版本，你的依赖包就不能和其他依赖包共享同一 `semver` 范围内的依赖包，这样会造成不必要的冗余。
-
-</aside>
+应用项目可以把 `package-lock.json` 提交到仓库，供团队和 CI 复现依赖。包自身的 lockfile 与消费者安装这个包时的版本选择是两件事，不能据此断言发布包带 lockfile 就无法共享依赖。
 
 ## 缓存
 
@@ -209,10 +204,10 @@ https://github.com/npm/node-semver
 
 # YARN
 
-Yarn 是为了弥补 npm 的一些缺陷而出现的。在 NPM v5 没出之前，Yarn 对 npm 有碾压性的优势：
+下面保留 Yarn 早期与旧版 npm 的比较。它们是当时整理的说法，不宜直接套到后续版本，尤其缓存并非 Yarn 独有：
 
-- 并行安装：无论 npm 还是 Yarn 在执行包的安装时，都会执行一系列任务。npm 是按照队列执行每个 package，也就是说必须要等到当前 package 安装完成之后，才能继续后面的安装。而 Yarn 是同步执行所有任务，提高了性能。
-- 离线模式：如果之前已经安装过一个软件包，用Yarn再次安装时之间从缓存中获取，就不用像npm那样再从网络下载了。
+- 并行安装：无论 npm 还是 Yarn 在执行包的安装时，都会执行一系列任务。npm 是按照队列执行每个 package，也就是说必须要等到当前 package 安装完成之后，才能继续后面的安装。而 Yarn 会并行安排安装任务。
+- 离线模式：如果之前已经安装过一个软件包，用 Yarn 再次安装时直接从缓存中获取，就不用像npm那样再从网络下载了。
 - 版本锁定：为了防止拉取到不同的版本，Yarn 有一个锁定文件 (lock file) 记录了被确切安装上的模块的版本号。
 - 多注册来源处理：所有的依赖包，不管他被不同的库间接关联引用多少次，安装这个包时，只会从一个注册来源去装，要么是 npm 要么是 bower, 防止出现混乱不一致。
 - 更好的语义化： yarn改变了一些npm命令的名称，比如 yarn add/remove，感觉上比 npm 原本的 install/uninstall 要更清晰。
@@ -221,9 +216,9 @@ Yarn 是为了弥补 npm 的一些缺陷而出现的。在 NPM v5 没出之前�
 
 npm 生成 package-lock.json 后，重复执行 npm install 时将会以其记录的版本来安装。这时如果手动修改 package.json 中的版本，重新安装也不会生效，只能手动执行 npm install 命令指定依赖版本来进行修改。
 
-yarn 则会将对比 yarn.lock 和 package.json 进比，更新 yarn.lock 文件。
+当时记录的 Yarn 行为是对比 `yarn.lock` 与 `package.json`，再更新 lockfile。上面关于 npm 修改版本“不生效”的说法缺少版本与复现条件，不作为通用区别。
 
-yarn.lock 保证install后产生确定的依赖结构。但这并不能完全解决问题，node_modules中依然存在各种不同版本的F，而这可能导致各种情况的编译报错，以及安装占磁盘空间。
+`yarn.lock` 固定已解析的依赖版本，但不会把所有包统一成同一个版本。项目仍可能同时安装多个版本，兼容性和磁盘占用需要分别处理。
 
 ### 关于项目和依赖库引用不同版本的包的情况
 
@@ -233,7 +228,7 @@ yarn.lock 保证install后产生确定的依赖结构。但这并不能完全解
 
 ![Untitled](/images/package-management-1.png)
 
-在 `package.json` 中我们只声明了 `nui`，A 是因为扁平化处理才放到和 `nui` 同级的 `node_modules`下，理论上在项目中写代码时只可以使用 `nui`，但实际上B~F也可以使用，由于扁平化将没有直接依赖的包提升到node_modules一级目录，Node.js没有校验是否有直接依赖，所以项目中可以**非法访问**没有声明过依赖的包。
+在 `package.json` 中我们只声明了 `nui`，A 是因为扁平化处理才放到和 `nui` 同级的 `node_modules`下，理论上在项目中写代码时只可以使用 `nui`，但实际上B~F也可以使用，由于扁平化将没有直接依赖的包提升到node_modules一级目录，Node.js没有校验是否有直接依赖，所以项目中可以访问没有声明过依赖的包。
 
 这会产生两个问题：
 
@@ -244,7 +239,7 @@ yarn.lock 保证install后产生确定的依赖结构。但这并不能完全解
 
 # PNPM
 
-pnpm(Performance npm) 的作者 Zoltan Kochan 发现 yarn 并没有打算去解决上述的这些问题，于是另起炉灶，写了全新的包管理器。
+接着看 pnpm。这里重点是它如何共享依赖文件，以及如何保持依赖之间的隔离。
 
 ![alotta-files.svg](/images/package-management-2.svg)
 
@@ -257,15 +252,15 @@ pnpm(Performance npm) 的作者 Zoltan Kochan 发现 yarn 并没有打算去解�
 1. 如果你用到了某依赖项的不同版本，只会将不同版本间有差异的文件添加到仓库。 例如，如果某个包有100个文件，而它的新版本只改变了其中1个文件。那么 `pnpm update` 时只会向存储中心额外添加1个新文件，而不会因为仅仅一个文件的改变复制整新版本包的内容。
 2. 所有文件都会存储在硬盘上的某一位置。 当软件包被被安装时，包里的文件会硬链接到这一位置，而不会占用额外的磁盘空间。 这允许你跨项目地共享同一版本的依赖。
 
-因此，您在磁盘上节省了大量空间，这与项目和依赖项的数量成正比，并且安装速度要快得多！
+依赖文件能够跨项目复用时，就可以减少重复存储。具体节省多少空间、安装快多少，仍要看项目和环境。
 
 ![Untitled](/images/package-management-3.png)
 
 ### **非扁平化的 node_modules**
 
-使用 npm 或 Yarn Classic 安装依赖项时，所有包都被提升到模块目录的根目录。 因此，项目可以访问到未被添加进当前项目的依赖。
+npm 或 Yarn Classic 的依赖提升，会让部分间接依赖出现在根目录的 `node_modules` 中。项目于是可能访问到自己没有声明的包，但并不是所有版本都能一起提升。
 
-而 pnpm 的 node_modules \*\*\*\*使用回了嵌套结构，避免了这个问题，同时将依赖链接至依赖中心，中心使用扁平化结构。这个平铺的结构避免了 npm v2 创建的嵌套 `node_modules` 引起的长路径问题，但与 npm v3,4,5,6 或 yarn v1 创建的平铺的 `node_modules` 不同的是，它保留了包之间的相互隔离。
+pnpm 的 `node_modules` 保留了依赖之间的关系，避免了这个问题，同时将依赖链接至依赖中心，中心使用扁平化结构。这个平铺的结构避免了 npm v2 创建的嵌套 `node_modules` 引起的长路径问题，但与 npm v3,4,5,6 或 yarn v1 创建的平铺的 `node_modules` 不同的是，它保留了包之间的相互隔离。
 
 ![node-modules-structure-8ab301ddaed3b7530858b233f5b3be57.jpg](/images/package-management-4.jpg)
 
@@ -277,7 +272,7 @@ pnpm(Performance npm) 的作者 Zoltan Kochan 发现 yarn 并没有打算去解�
 
 # Monorepo
 
-Monorepo 可以理解为一种基于仓库的代码管理策略，它提出将多个代码工程“独立”的放在一个仓库里的管理模式，其中“独立”这个词非常重要，每个代码工程在逻辑上是可以独立运行开发以及维护管理的。Monorepo在实际场景中的运用可以非常宽泛，甚至有企业将它所有业务和不同方向语言的代码放在同一个仓库中管理，当然，这样的运用方式对企业的仓库底层能力要求相当高。因此，更多的Monorepo 实践会根据业务和职能范围来进行组织。
+Monorepo 把多个工程放进同一个仓库管理。这里想强调的是工程之间仍有自己的边界，可以分别开发和维护，并通过工具共享代码。范围可以按业务或职能组织；规模越大，对仓库工具的要求也越高。
 
 ![modb_20220221_42d7330c-92df-11ec-97a2-fa163eb4f6be.png](/images/package-management-5.png)
 
@@ -287,4 +282,4 @@ Monorepo 可以理解为一种基于仓库的代码管理策略，它提出将�
 - Single-repo Monolith：同样也只有一个仓库，而它并不会独立的分割每个代码工程，而是让他们成为一体来进行开发管理，模块的拆分取决于代码工程的设计。
 - Multi-repo：则是通过建立多个仓库，每个仓库包含拆分好的代码工程，而仓库间的调用共享则是通过NPM或者其他代码引用的方式进行。
 
-yarn 和 pnpm 都天生支持 Monorepo。
+Yarn 和 pnpm 都有 workspace 能力，可以用于组织这类仓库。

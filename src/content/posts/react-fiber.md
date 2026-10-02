@@ -1,20 +1,19 @@
 ---
-title: 谈谈 React Fiber
+title: React Fiber：工作单元与调度
 date: 2022-06-27T16:00:00.000+00:00
-duration: 30min
 ---
 
-Reference: https://github.com/acdlite/react-fiber-architecture
+参考：[React Fiber Architecture](https://github.com/acdlite/react-fiber-architecture)。
+
+这是 2022 年的阅读笔记，引用了不同时期的源码结构。`pendingWorkPriority`、`expirationTime`、effect list 等字段保留原样，用于理解当时的设计，不是同一份版本的完整实现。
 
 ## 概述
 
-React Fiber 是 React 16 的一个 Feature。我们都知道 React 本质是一个 UI 框架，其主要解决的是数据到 UI 的映射问题。其中一个问题是，如果有一段不能被打断的 JS 代码正在运行，那么由于 JS 本身是单线程的，浏览器的渲染就会被阻塞。因此，Fiber reconciler 应运而生。
+React Fiber 随 React 16 引入。这篇关心的是一个调度问题：长时间占用主线程的 JavaScript 工作，会阻塞浏览器渲染。React 如何把协调过程拆成工作单元，以便安排优先级和让出执行时间？
 
 ## 准备
 
-我们假定你对数据结构、操作系统、JavaScript等已经有了一定的了解。
-
-建议你先了解以下知识：
+阅读时需要一点数据结构和 JavaScript 调用栈基础。下面几篇是原笔记用到的背景资料：
 
 - [React 组件、元素和实例——“组件”通常是一个重载的术语。牢牢掌握这些术语至关重要。](https://reactjs.org/blog/2015/12/18/react-components-elements-and-instances.html)
 
@@ -24,36 +23,34 @@ React Fiber 是 React 16 的一个 Feature。我们都知道 React 本质是一�
 
 - [React 设计原则 - 特别注意调度部分。它很好地解释了 React Fiber 的原因。](https://reactjs.org/docs/design-principles.html)
 
-好了，让我们总结一下：
+先看协调与调度分别处理什么。
 
 ### Reconciliation
 
-众所周知，要想让 HTML 页面发生 CSS 做不到的变化，就只能用 JS 更新 DOM。
-
-但 DOM 全部重新渲染一遍太慢了。我们需要“**找不同”**：将需要渲染的 DOM 和之前的 DOM 进行对比，提交那些不一样的地方，这样不是快很多嘛。
+界面状态变化后，需要确定哪些部分要更新。协调过程可以先理解为“找不同”：比较新旧描述，再把需要的变化提交到宿主环境。
 
 ![截屏2022-07-07 11.17.57.png](/images/react-fiber/1.png)
 
-React 就是这么一个框架，你写代码时可以把整个应用当做每次都重新渲染来编写，剩下的脏活（包括哪部分重新渲染，哪部分不重新渲染），它帮你处理。
+写 React 组件时，描述状态对应的界面；哪些宿主节点需要更新，由 React 协调和提交。
 
 这里就有一个**虚拟 DOM** 的概念，React 预先在虚拟 DOM 上操作，之后再提交更改到浏览器。
 
 - 如果某棵子树的组件类型和之前不一样，那么 React 不管里面一不一样，全部替换。
 - 遍历生成的列表，差异对比使用 `key` 属性。要求是“稳定的、可预测的和唯一的”，所以不建议使用每个项的 `index` 作为 `key`。
 
-当然需要指出的是，由于 React Nactive (可以在 iOS & Android 原生运行的 React)也是这么一套机制，使用虚拟 DOM 称呼就不恰当了，所以我们用 **Reconciliation** 来称呼。
+React Native 也使用协调机制，只是宿主环境不是浏览器 DOM。因此这里用 **Reconciliation（协调）** 描述新旧树之间的处理。
 
 ### **Scheduling**
 
 在没有多线程的时代，一个单线程 CPU 如何同时运行多个任务？
 
-我们可以运用通讯理论里面的**时间分片**的理念，将一个大任务细分为不同的子任务，然后将时间线分割成等长的一段段，这样我们就可以往里面塞不同任务的任务片。
+可以借用时间分片的思路理解：把大任务拆成小单元，再安排这些单元何时执行。
 
 ![截屏2022-07-07 11.42.16.png](/images/react-fiber/2.png)
 
 由于计算机的速度很快，我们是不会察觉到任务的实际运行是间断的。那么如果我有些任务很急，想要优先执行，有些任务重 IO，很长时间不会响应，如何对这些任务进行运行调度呢？
 
-操作系统就是一个解决方案，而 Fiber reconciler 本身实现了部分现代操作系统的核心调度器，从而对各种情况的渲染进行自动安排、优化。
+操作系统调度可以作为类比。Fiber reconciler 也需要安排工作顺序，但这里的类比不意味着它等同于操作系统调度器。
 
 ![截屏2022-07-07 11.53.54.png](/images/react-fiber/3.png)
 
@@ -82,7 +79,7 @@ React 就是这么一个框架，你写代码时可以把整个应用当做每�
 
 ![截屏2022-07-07 17.19.35.png](/images/react-fiber/6.png)
 
-看看下面这段代码，我们通过`requestIdleCallback` 调用一个低优先的任务，这个任务入参是一个 `deadline` ，它有 `timeRemaining` 这么一个获取剩余空余时间的函数，如果这个任务会持续执行至 `timeRemaining()` 等于0，如果任务没执行完，会进入下一个空余时间回调队列。
+下面是使用 `requestIdleCallback` 拆分工作的示例。`deadline.timeRemaining()` 表示当前剩余空闲时间，时间不足且还有任务时，再安排下一次回调。它用于说明调度思路，不代表 React 的实际调度器就使用这段实现。
 
 ```tsx
 function lowPriorityWork(deadline) {
@@ -94,13 +91,11 @@ function lowPriorityWork(deadline) {
 }
 ```
 
-如果我们可以自定义调用堆栈的行为以优化渲染 UI，那不是很好吗？如果我们可以随意中断调用堆栈并手动操作堆栈帧，那不是很好吗？
-
-这就是 React Fiber 的目的。 Fiber 是 JS 堆栈的重新实现，专门用于 React 组件。你可以将一个纤程视为一个虚拟的堆栈帧。
+如果把 React 的工作保存在自己的数据结构里，就不必完全依赖一次走到底的调用栈。可以把 Fiber 类比为虚拟堆栈帧：记录这个单元的输入、状态和与其他单元的关系。
 
 ## Fiber 是什么
 
-好吧，下面代码中每一个 DOM 或者 ReactNode 都是一个 Fiber。
+用下面这棵组件树来理解 Fiber 的关系：
 
 ```tsx
 function App() {
@@ -121,7 +116,7 @@ function App() {
 ReactDOM.render(<App />, document.getElementById('root'))
 ```
 
-当然，这里并不是说我们能直接写一大堆 Fiber 出来，我们写出的 JSX 代码会通过 React 的 JSX 编译器转成一个个的 Fiber 结点。Fiber 的数据结构如下：
+JSX 描述的是 React 元素，Fiber 是 React 内部管理工作时的数据结构，两者不要混为一谈。原笔记摘录的 Fiber 结构如下：
 
 ```tsx
 export interface Fiber {
@@ -197,13 +192,13 @@ export interface Fiber {
 
 ### **`child` & `sibling`**
 
-这两个属性指向其他 Filber，`child` 指向孩子结点，`sibling` 指向兄弟结点。这代表着 Filber 之间的直接关系是单链表树形结构。`return` 就是返回上一个堆栈。
+这两个属性指向其他 Fiber，`child` 指向孩子结点，`sibling` 指向兄弟结点。这代表着 Fiber 之间的直接关系是单链表树形结构。`return` 就是返回上一个堆栈。
 
 ![截屏2022-07-07 17.36.28.png](/images/react-fiber/7.png)
 
 ### **`pendingProps` & `memoizedProps`**
 
-每个 Fiber 都是一个纯函数，所以我们可以通过判断之前的输入 `memoizedProps` 是否等于当前输入`pendingProps` 来判断函数输出是否可以重用。
+`pendingProps` 是这次处理的输入，`memoizedProps` 记录之前处理过的输入。比较它们有助于判断是否能复用之前的工作，但不能把 Fiber 本身当成纯函数，也不能只凭 props 相等就概括所有跳过更新的条件。
 
 ### **`pendingWorkPriority`**
 
@@ -218,9 +213,9 @@ function matchesPriority(fiber, priority) {
 
 ### **`alternate`**
 
-`alternate` 就是 Fiber 要渲染的东西的缓存，在 React 中就是 **current tree** 和 **workInProgress tree**。
+`alternate` 连接 Fiber 对应的另一份工作结构。这里用 **current tree** 和 **workInProgress tree** 来理解这对关系。
 
-我们区分一下**，**当前 UI 正在渲染的就是 current tree，当 存在更新的时候，React 会先生成一个 workInProgress tree 并在上面工作、进行下一次渲染，一旦 UI 完成 workInProgress tree 渲染，它就会变成 current tree。
+`current tree` 对应当前已提交的界面；更新时在 `workInProgress tree` 上处理下一次工作，提交完成后再切换。
 
 ![截屏2022-07-07 17.57.06.png](/images/react-fiber/8.png)
 
@@ -232,23 +227,21 @@ function matchesPriority(fiber, priority) {
 
 ### Fiber Tree 构建与更新
 
-一开始可是没有什么树的，我们要先构建一颗 Fiber Tree 出来。算法其实就是深度遍历的变体，不同之处在于这里进入一个结点完成处理后并不会直接返回上层结点，而是从自己的Sibling属性中拿到兄弟结点。
+最初需要构建 Fiber Tree。遍历可以看成深度遍历的变体：通过 `child` 向下，通过 `sibling` 找兄弟，通过 `return` 回到父节点。
 
-好了，那当我们改变某些 Fiber 的属性触发了更新呢？由于这棵树已经存在了，如我们之前说的，React 会生成一个新的 workInProgress tree。看上去没啥特别的，但不同的点在于，这棵树不是完全重新构建的，而是复制 current tree 的各个 fiber 形成一个新的 tree，在更新阶段中的 work 会对每个 fiber 的变化进行合并。
+状态变化触发更新后呢？由于这棵树已经存在了，如我们之前说的，React 会生成一个新的 workInProgress tree。看上去没啥特别的，但不同的点在于，这棵树不是完全重新构建的，而是复制 current tree 的各个 fiber 形成一个新的 tree，在更新阶段中的 work 会对每个 fiber 的变化进行合并。
 
-重点来了，那么这个 Fiber Reconciler 和之前的 Reconciler 有什么区别呢？React 15 的 Reconciler 很笨，堆栈调度是同步的，你这个树开始遍历就必须一条路走到黑，不能停下来。这就导致了如果其他更新的优先级更高的话，没有可能去暂停当前正在执行的更新。于是你会发现，用户更容易感知的更新如样式等很容易就被阻塞住了，就很难受。
+与 React 15 的同步堆栈协调相比，工作单元的拆分给暂停、继续和安排优先级提供了基础。同步遍历一旦开始，就可能长时间占用线程，影响用户更着急看到的更新。
 
-Fiber Reconciler 就不一样了，虽然我还是一颗树，但我这个树是可以异步更新的，因为我每个结点都进化成一个子任务了，然后我还可以结合`requestAnimationFrame`和`requestIdleCallback` 达到安排优先级的效果。
+Fiber 把树上的工作拆成可管理的单元。上面的 `requestAnimationFrame` 与 `requestIdleCallback` 是帮助理解时间安排的浏览器 API，不能直接当成 React 调度实现的结论。
 
 ### Fiber 渲染
 
-实际的 Fiber 渲染调度发生在这一阶段， React 开始递归调用每一个 Fiber 的 workLoop 函数，这个workLoop 函数中间的执行阶段即函数组件是如何执行的我们先跳过，着重描述 workLoop 的开始和完成干了什么。
-
-有兴趣可以看看，函数组件执行更新
+接下来记录工作循环，以及其中函数组件执行的部分。原笔记摘录省略了不少分支，先关注初始化、执行与清理的顺序。
 
 ## **`renderWithHooks`**
 
-这个是函数组件执行时，调用的第一个函数，它的作用是将 `function` 组件初始化。
+下面的摘录用 `renderWithHooks` 设置函数组件执行时的 Hook 环境。代码里的部分注释是当时的简化理解，例如 current tree 不会直接“替换成真实 DOM”；实际宿主更新发生在提交阶段。
 
 ```tsx
 function renderWithHooks(
@@ -307,7 +300,7 @@ function renderWithHooks(
 }
 ```
 
-那这个函数具体干了些什么呢，分析一下上面的源码：
+按上面的摘录看，主要有五步：
 
 1.  先置空即将调和渲染的 `workInProgress` 树的 `memoizedState` 和 `updateQueue` ，之后我们就可以把新的 `hooks` 信息挂载到这两个属性上
 2.  根据当前函数组件是否是第一次渲染，赋予 `ReactCurrentDispatcher.current` 不同的`hooks`
@@ -341,7 +334,7 @@ const HooksDispatcherOnUpdate = {
 ```
 
 3.  调用 `Component(props, secondArg)` 执行我们的函数组件
-4.  将 `ContextOnlyDispatcher` 赋值给 `ReactCurrentDispatcher.current`，由于`js`是单线程的，也就是说我们在函数组件中调用的`hooks`，都是`ContextOnlyDispatcher`对象上的`hooks`。
+4. 执行组件之后，把 `ReactCurrentDispatcher.current` 设回 `ContextOnlyDispatcher`。从上面的代码顺序可见，组件执行期间用的是 mount 或 update dispatcher，不是 `ContextOnlyDispatcher`。
 
 > `ContextOnlyDispatcher` ：执行赋值不同的`hooks`对象，判断在`hooks`执行是否在函数组件内部，捕获并抛出异常。
 
@@ -363,7 +356,7 @@ function throwInvalidHookError() {
 
 ![截屏2022-04-22 下午3.15.28.png](/images/react-fiber/11.png)
 
-## 总结
+## 工作循环与提交
 
 ![截屏2022-07-07 18.30.30.png](/images/react-fiber/10.png)
 
@@ -387,4 +380,4 @@ function throwInvalidHookError() {
 
 效果列表是纤维的链表，有副作用。因此，它是渲染阶段 workInProgress 树的节点子集，具有副作用（更新）。效果列表节点使用 nextEffect 指针链接。
 
-这个阶段调用的函数是completeRoot。workInProgress 树将成为 current 树，因为它将用于呈现 UI。实际的 DOM 更新，如插入、更新、删除和对生命周期方法的调用——或与 refs 相关的更新——发生在效果链表中的节点上。
+原笔记在这里记录的函数名是 `completeRoot`。workInProgress 树将成为 current 树，因为它将用于呈现 UI。实际的 DOM 更新，如插入、更新、删除和对生命周期方法的调用——或与 refs 相关的更新——发生在效果链表中的节点上。

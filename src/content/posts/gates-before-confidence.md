@@ -1,16 +1,13 @@
 ---
-title: 0.1.5
+title: "taskflow 0.1.5：评分、重试和副作用分类"
 date: 2026-07-03T00:00:00.000+08:00
-description: scoring gate、reflexion、副作用分类。读文件和改外部世界，默认路径分开。
-duration: 3min
+description: "0.1.5 加入 scoring gate、reflexion 循环和副作用分类，区分读取与对外修改的默认处理。"
 lang: zh
 tags: [taskflow, 门禁, 副作用]
 ---
 
-0.1.5 给 [taskflow](https://github.com/heggria/taskflow) 加了三样东西：scoring gate、reflexion 循环、副作用分类。流程可以按规则给自己打分；分不够就再想一轮；读文件和改外部世界，走不同的默认路径。
+0.1.5 给 [taskflow](https://github.com/heggria/taskflow) 加了 scoring gate、reflexion 循环和副作用分类。流程按规则评分，分数不足时再执行一轮；读取文件和修改外部状态采用不同的默认处理。
 
-分数可以很低级，规则可以很笨。笨的好处是你知道它在笨什么。模型说「完成了」，外面还得有东西能核对。
+评分的用途取决于规则能检查什么。模型给出「完成了」的回答，还需要核对实际结果。对可以重试的步骤和会产生外部影响的步骤，也需要分别安排失败后的处理。
 
-能重来的失败，和不能重来的失败，聊天里常常长得一样：都是一段很有把握的话。副作用分类就是为了把它们拆开。
-
-同一天技能编译收成一份源，再分别给 Pi 和 Codex。判断放在一处，适配放在边上。
+同一天，技能编译改成维护一份源，再分别生成 Pi 和 Codex 的适配。

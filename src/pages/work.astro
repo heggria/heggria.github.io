@@ -1,0 +1,28 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro'
+import repositories from '../data/repositories.json'
+const descriptions: Record<string,string> = {
+  taskflow:'给 coding agent 编排任务，验证任务图，查看执行记录，恢复、回放或增量重算。当前发布为 beta。',
+  flowgate:'基于 sing-box 的 macOS 代理客户端，管理订阅、节点、路由和连接。开发中。',
+  'home-compass':'北京住房的板块评分与月供预算计算器。评分权重可调整，数据与估算需结合实际核对。',
+  selffield:'在浏览器里记录经历、回答和变化的个人实验，数据保存在本地。',
+  'heggria.github.io':'这个网站。Astro 静态站点，使用 Pagefind 做全文搜索。',
+  heggria:'GitHub 个人主页，包含工作流 SVG 动画和自动更新的文章、发布记录。',
+  'homebrew-tap':'个人工具的 Homebrew 安装配方，包含 agent-usage-atlas 和 hermit-agent。',
+}
+const main = ['taskflow','flowgate','home-compass','selffield'].map(name=>repositories.find(r=>r.name===name)!)
+const infrastructure = repositories.filter(r=>!r.archived&&!r.fork&&!main.includes(r))
+const archived = repositories.filter(r=>r.archived&&!r.fork)
+const forks = repositories.filter(r=>r.fork)
+---
+<BaseLayout title="项目与仓库 — Heggria" description="个人开源项目、开发中的实验、归档代码和 fork 的完整目录。">
+  <div class="page-width">
+    <header class="page-heading work-intro"><p class="eyebrow">WORK / REPOSITORIES</p><h1>项目与仓库<span class="accent">.</span></h1><p>主要维护 taskflow，也做一些小工具。旧实验和 fork 单独放在下面，方便分清哪些是现在的工作。</p></header>
+    <section class="work-group"><h2>个人项目</h2>{main.map(r=><div class="work-repo"><h3><a href={r.url}>{r.name} ↗</a></h3><div><p>{descriptions[r.name]}</p>{r.homepage&&<a class="text-link repo-demo" href={r.homepage}>打开网站 ↗</a>}</div><span class="repo-kind">{r.language}</span></div>)}</section>
+    <section class="work-group"><h2>工作</h2><div class="work-repo"><h3><a href="https://github.com/nexu-io/open-design">OpenDesign ↗</a></h3><p>我目前所在的团队，做开源、本地优先的设计工具。它是公司的项目。</p><span class="repo-kind">团队项目</span></div></section>
+    <section class="work-group"><h2>站点与分发</h2>{infrastructure.map(r=><div class="repo-archive-row"><a href={r.url}>{r.name} ↗</a><span>{descriptions[r.name]}</span></div>)}</section>
+    <details class="repo-details"><summary>归档项目 <span class="count">{archived.length}</span></summary><p class="repo-note">以下仓库已归档，作为历史代码保留。有些是完整实验，有些只有原型或提案。</p>{archived.map(r=><div class="repo-archive-row"><a href={r.url}>{r.name} ↗</a><span>{r.description}</span></div>)}</details>
+    <details class="repo-details"><summary>Fork 与资料收藏 <span class="count">{forks.length}</span></summary><p class="repo-note">这些仓库来自其他作者，不计入我的原创项目。点进仓库可以查看上游与 fork 关系。</p>{forks.map(r=><div class="repo-archive-row"><a href={r.url}>{r.name} ↗</a><span>{r.archived?'已归档的 fork':'Fork'}{r.description?` · ${r.description}`:''}</span></div>)}</details>
+    <p class="repo-note">公开仓库目录核对于 2026-10-02，共 {repositories.length} 个。<a href="https://github.com/heggria?tab=repositories">查看 GitHub 上的最新状态 ↗</a></p>
+  </div>
+</BaseLayout>

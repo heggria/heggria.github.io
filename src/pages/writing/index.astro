@@ -1,24 +1,24 @@
 ---
 import { getCollection } from 'astro:content'
 import BaseLayout from '../../layouts/BaseLayout.astro'
-
-const posts = (await getCollection('posts', ({ data }) => !data.draft))
-  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
-const date = (value: Date) => new Intl.DateTimeFormat('zh-CN', { month: '2-digit', day: '2-digit' }).format(value)
-let previousYear: number | undefined
+import { published, newestFirst, yearOf, formatDate, readingMinutes, postLink } from '../../lib/posts'
+const posts = (await getCollection('posts')).filter(published).sort(newestFirst)
+const years = [...new Set(posts.map(yearOf))]
 ---
-
-<BaseLayout title="Writing — Heggria" description="关于工程判断、系统、工具与那些值得被保留下来的思考。">
-  <div class="page-width">
-    <header class="page-intro"><p class="kicker">Writing</p><h1>值得反复回看的想法。</h1><p>关于工程判断、约束、工具与长期工作的公开笔记。技术会变化，但判断值得留下。</p></header>
-    <section class="writing-list" aria-label="文章列表">
-      {posts.map((post) => {
-        const year = post.data.date.getFullYear()
-        const showYear = year !== previousYear
-        previousYear = year
-        const href = post.data.redirect || `/writing/${post.id}/`
-        return <>{showYear && <div class="year-label">{year}</div>}<a class="writing-row" href={href}><span class="writing-date">{date(post.data.date)}</span><span class="writing-title">{post.data.title}</span><span class="writing-duration">{post.data.duration || 'Essay'}</span><span>↗</span></a></>
-      })}
-    </section>
+<BaseLayout title="文章 — Heggria" description="Heggria 的全部文章：前端、agent 工具和开发中的具体问题。">
+  <div class="page-width writing-page">
+    <header class="page-heading"><p class="eyebrow">WRITING / {posts.length} 篇</p><h1>文章与笔记<span class="accent">.</span></h1><p>从前端学习笔记，到最近做工具时遇到的问题。</p></header>
+    <div class="archive-tools"><label><span class="visually-hidden">按标题或标签筛选</span><input id="archive-query" type="search" placeholder="筛选标题、简介或标签" autocomplete="off" /></label><label><span class="visually-hidden">按年份筛选</span><select id="archive-year"><option value="all">全部年份</option>{years.map(y=><option value={y}>{y}</option>)}</select></label><span id="archive-count" aria-live="polite">{posts.length} 篇</span></div>
+    <div class="archive-list">{years.map(year=><section class="archive-year" data-year-group={year}><h2>{year}</h2><div>{posts.filter(p=>yearOf(p)===year).map(post=><a class="archive-row" href={postLink(post)} data-year={year} data-search={`${post.data.title} ${post.data.description||''} ${post.data.tags.join(' ')}`.toLowerCase()}><time datetime={post.data.date.toISOString()}>{formatDate(post.data.date,true)}</time><span class="archive-title">{post.data.title}</span><span class="archive-duration">约 {readingMinutes(post.body)} 分钟</span><span aria-hidden="true">↗</span></a>)}</div></section>)}</div>
+    <p id="archive-empty" class="empty-state" hidden>没有匹配的文章。换个关键词，或选择全部年份。</p>
+    <p class="archive-search-hint">想查文章正文？<a href="/search/">使用全文搜索 ↗</a></p>
   </div>
+  <script>
+    const input = document.querySelector<HTMLInputElement>('#archive-query')!
+    const year = document.querySelector<HTMLSelectElement>('#archive-year')!
+    const rows = [...document.querySelectorAll<HTMLAnchorElement>('.archive-row')]
+    const groups = [...document.querySelectorAll<HTMLElement>('.archive-year')]
+    const filter = () => { const q=input.value.trim().toLowerCase(); let count=0; for(const row of rows){row.hidden=!(row.dataset.search?.includes(q)&&(year.value==='all'||row.dataset.year===year.value));if(!row.hidden)count++}for(const group of groups)group.hidden=![...group.querySelectorAll<HTMLElement>('.archive-row')].some(row=>!row.hidden);document.querySelector('#archive-count')!.textContent=`${count} 篇`;document.querySelector<HTMLElement>('#archive-empty')!.hidden=count>0 }
+    input.addEventListener('input',filter);year.addEventListener('change',filter)
+  </script>
 </BaseLayout>

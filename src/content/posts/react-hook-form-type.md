@@ -1,10 +1,9 @@
 ---
-title: React hook form 的类型体操：FieldPath & FieldPathValue
+title: React Hook Form 的字段路径类型
 date: 2022-08-10T16:00:00.000+00:00
-duration: 15min
 ---
 
-`react-hook-form` 库中有两个重要的类型：**`FieldPath`** 和 **`FieldPathValue`**。这两个类型用来描述表单中的字段路径和字段对应值的类型，它们可以帮助我们更规范的编写 `react-hook-form` 的代码。`i18n` 用的是和 `FieldPath` 相似的构造方法。
+这篇记录 2022 年读 `react-hook-form` 类型源码时关注的两个类型：`FieldPath` 约束字段路径，`FieldPathValue` 获取路径对应的值类型。类似的路径构造方法也可以用来理解 `i18n` 的 key 类型。
 
 ### 什么是 `FieldPath` ？
 
@@ -34,7 +33,7 @@ interface FormValues {
 - "tuple.1"
 - \`array.\${number}\`
 
-这些值就可以作为 `react-hook-form` 中一些 hook 和方法的参数，比如 `useController`、`useWatch`、`setValue`、`getError` 等。这样可以让我们更灵活地操作表单中的不同字段。
+这些路径可以用于描述 `useController`、`useWatch`、`setValue` 等 API 操作的字段。字段名写错，或嵌套路径不存在时，就能在类型检查阶段发现。
 
 #### `FieldPath` 的构造过程
 
@@ -42,30 +41,30 @@ interface FormValues {
 
 ### 什么是 `FieldPathValue`？
 
-`FieldPathValue` 也是一个泛型类型，它接受两个参数：`TFieldValues` 和 `TFieldPath`。`TFieldValues` 表示表单中所有字段的值的类型，`TFieldPath` 表示某个字段或者嵌套字段的路径。`FieldPathValue` 的返回值是一个联合类型，表示 `TFieldPath` 对应的字段的值的类型。例如，如果我们还是使用上面的 `FormValues` 类型，那么：
+`FieldPathValue` 也是一个泛型类型，它接受两个参数：`TFieldValues` 和 `TFieldPath`。`TFieldValues` 表示表单中所有字段的值的类型，`TFieldPath` 表示某个字段或者嵌套字段的路径。结果表示 `TFieldPath` 对应字段的值类型。例如，如果我们还是使用上面的 `FormValues` 类型，那么：
 
-- `FieldPathValue<FormValues, “name”>` 的返回值是 `string`
-- `FieldPathValue<FormValues, “address”>` 的返回值是 `{ city: string; country: string; }`
-- `FieldPathValue<FormValues, “address.city”>` 的返回值是 `string`
-- `FieldPathValue<FormValues, “tuple.0”>` 的返回值是 `number`
-- `FieldPathValue<FormValues, “array”>` 的返回值是 `string[]`
+- `FieldPathValue<FormValues, "name">` 的返回值是 `string`
+- `FieldPathValue<FormValues, "address">` 的返回值是 `{ city: string; country: string; }`
+- `FieldPathValue<FormValues, "address.city">` 的返回值是 `string`
+- `FieldPathValue<FormValues, "tuple.0">` 的返回值是 `number`
+- `FieldPathValue<FormValues, "array">` 的返回值是 `string[]`
 
-这些值就可以作为 `react-hook-form` 中一些 hook 和方法的泛型参数，比如 `useForm`、`useFormContext`、`useFormState` 等等。这样可以让我们更准确地获取和设置表单中不同字段的值。
+重点是把字段路径和字段值联系起来。例如 `tuple.0` 对应 `number`，而 `address` 对应整个地址对象。
 
-#### FieldPathValue的构造过程
+#### `FieldPathValue` 的构造过程
 
 ![FieldPathValue的构造过程.png](/images/react-hook-form-type/2.webp)
 
 ![FieldPathValue的构造过程-2.png](/images/react-hook-form-type/3.webp)
 
-> 1. 首先P类型约束为T的path或者T的arrayPath，然后T extends any 是为了排除any之外的类型，比如、void等 让他们都变成never。满足的话就到P extends……，<br/>
-> 2. 如果P是一个由两部分组成的字符串模板字面量，那么就把第一部分推断为K，把第二部分推断为R，然后去判断K是否为T的键。如果是的话就判断R是否为K的路径，就得到PathValue<T[k],R>.也就是获取T[K]和R对应的属性值类型。它会不断地拆分，并且查找T[K]中相应的属性值。<br/>
-> 3. K extends ${ArrayKey}：表示如果K是一个数组索引字符串（ArrayKey），即0或者1或者2等等（注意不包括数字本身），那么就继续执行后面的逻辑，否则就返回never。<br/>
-> 4. 符合的话，判断T是不是数组，是的话就输出Path……，不符合就到never。<br/>
-> 5. P……不满足的话就判断P是不是T的键，是的话就返回T[P]，不是的话就判断P是不是1个数组索引字符串，是的话就判断T是不是数组，是的话就返回这个元素类型，不是的话就到never。
+读图里的类型定义，可以按路径拆分来理解：
 
-### 总结
+1. `P` 先受 `T` 的 `Path` 或 `ArrayPath` 约束。外层的 `T extends any` 不能按“排除非 any 类型”理解；这里先沿着路径拆分分支往下看。
+2. 若 `P` 能拆成 `K.R`，先判断 `K` 是否为 `T` 的键，再对 `T[K]` 和剩余路径 `R` 递归调用 `PathValue`。
+3. 若 `K` 匹配 `${ArrayKey}`，则走数组索引分支，继续判断 `T` 是否为数组。
+4. 若 `P` 不能继续按点号拆分，先判断它是不是 `T` 的键，是则得到 `T[P]`。
+5. 否则检查它是不是数组索引字符串；匹配数组时取得元素类型，不匹配则得到 `never`。
 
-TypeScript 的一大优点是支持一些高级的类型系统特性，这些特性可以让我们用更有表达力和灵活性的方式来定义和使用类型。 例如，我们可以使用条件类型来根据某些条件创建不同的类型，使用映射类型来根据已有的类型生成新的类型，使用泛型类型来抽象出通用的模式，以及使用类型变量来捕获动态的类型信息。 这些技术不仅可以帮助我们更好地控制和约束我们的代码，还可以让我们利用 TypeScript 的强大的类型推断能力，从而减少重复和冗余的代码。
+这两个类型把字符串路径变成了对象结构上的约束。构造路径时用到泛型、条件类型和字符串模板字面量；取值时则沿着路径递归查找。以后读类似的类型定义，可以先看它在处理“路径生成”还是“路径取值”。
 
 参考：[react-hook-form](https://github.com/react-hook-form/react-hook-form/blob/274d8fb950f9944547921849fb6b3ee6e879e358/src/types/utils.ts#L86)

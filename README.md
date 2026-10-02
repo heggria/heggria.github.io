@@ -1,10 +1,31 @@
 # heggria.github.io
 
-Heggria 的个人写作与作品站。
+Personal site and technical notes: **https://heggria.github.io/**
 
-- Astro 静态生成
-- 类型安全内容集合
-- RSS、Sitemap 与 Pagefind 全文搜索
-- GitHub Pages 自动发布
+Built with Astro. Markdown posts live in `src/content/posts/`; Pagefind builds the full-text index. GitHub Actions deploys the static output to GitHub Pages.
 
-文章内容采用 [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/)，代码采用 MIT License。
+## Develop
+
+```sh
+pnpm install --frozen-lockfile
+pnpm dev
+```
+
+## Check and build
+
+```sh
+pnpm check
+pnpm build
+pnpm preview
+```
+
+Full-text search is available in the built preview, after Pagefind has generated its index.
+
+## Content
+
+- Keep an article's filename to preserve its `/writing/<id>/` URL. Legacy `/posts/<id>/` URLs redirect to the same article.
+- Keep original publication dates when editing old posts. Reading time is estimated from the body.
+- `src/data/repositories.json` is a dated public repository inventory, grouped on `/work/` by project, support tooling, archive and fork.
+- The site has an RSS feed, sitemap, light/dark themes, article navigation and keyboard-accessible controls.
+
+Old articles describe their original technical context. Editorial changes should preserve code, citations and the author's actual claims; do not add invented experiences or results.

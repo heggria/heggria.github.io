@@ -1,14 +1,15 @@
 ---
-title: 前端 CSS 的演进与创新
+title: CSS 如何组织：从命名约定到组件样式
 date: 2023-06-16T16:00:00.000+00:00
-duration: 40min
 ---
 
-今天我们来聊聊一个我们熟悉又陌生的东西：CSS。可能你会说，CSS，这么简单的东西，不就是一些选择器，一些属性，一些变量放一起，就能给页面加上样式了吗？诶别急，CSS 本身确实没啥好讲的，但是**任何一个东西一旦数量多起来了，就会麻烦起来**。CSS 同样逃脱不了这个定律，今天就让我们来对前端 CSS 体系做一个全面的回顾与展望。
+样式少的时候，直接写选择器和属性就够了。项目变大后，类名冲突、重复规则、样式覆盖顺序才逐渐成为需要处理的问题。
+
+这篇是 2023 年整理的 CSS 组织方式笔记：从样式文件和命名约定，看到预处理器、PostCSS，再比较 CSS Modules、CSS-in-JS 与原子化 CSS。文中的工具状态、调查和图表保留当时的语境，示例用于比较写法，不是一套经过运行验证的配置。
 
 # 脱离 HTML
 
-大家都知道 CSS 在 HTML 里面的几种写法，先稍微回顾一下：
+先看样式如何进入 HTML：
 
 - 行内样式：`style` 属性
 
@@ -45,7 +46,7 @@ duration: 40min
     <element id="element-1" class="class-name" />
     ```
 
-- 外部样式：`<meta>` 标签内部使用 `<link>` 标签引入外部 CSS 文件
+- 外部样式：通过 `<link>` 引入 CSS 文件。下面是当时留下的结构示例，其中 `<header>`、`<meta>` 的嵌套不能作为正确的文档结构直接使用：
 
   - ```
     <header>
@@ -59,7 +60,7 @@ duration: 40min
     </body>
     ```
 
-在直接编写 HTML 的时候，我们几乎不会用行内样式与导入样式。行内样式**可复用性、可维护性、性能都很差**，而导入样式看起来虽然挺好的，但是有着致命缺点，我们一般不会使用：**会影响浏览器** **并发** **请求资源的效率，因为它们的加载时机不确定或会被其他资源阻塞。** [具体表现如下：](https://www.stevesouders.com/blog/2009/04/09/dont-use-import/)
+行内样式不方便在多个元素之间共享；外部样式文件更便于集中维护。`@import` 还需要留意加载顺序：浏览器发现被导入文件的时间，可能影响资源并发。下面的表格来自一篇 2009 年的文章，[记录了当时的情况](https://www.stevesouders.com/blog/2009/04/09/dont-use-import/)，其中包含 IE 的行为，不能直接套到所有浏览器。
 
 | 执行顺序     | 内联 @import | 外部 @import     | <link> 标签              |
 | ------------ | ------------ | ---------------- | ------------------------ |
@@ -67,30 +68,30 @@ duration: 40min
 | 外部 @import | /            | 并行             | @import 阻塞             |
 | <link> 标签  | /            | /                | 并行                     |
 
-可以发现其优先级在大部分情况下低于<link>标签，最好的情况也只是并行渲染，这导致：
+这份记录提醒我关注两个问题：
 
-- 可能会延迟页面样式的渲染，可能会造成页面闪烁的现象；
-- 可能会延迟页面样式的应用，可能会和页面中的 javascript 脚本产生冲突，导致 js 修改的样式被后加载的外部样式表覆盖；
+- 样式何时加载完成，是否造成延迟或闪烁；
+- 后加载的规则是否覆盖了先前的样式，包括 JavaScript 修改后的效果。
 
-在最开始的时候，我们在努力让 CSS 与 HTML 分离，形成独立的两个文件，这样有利于**内容与表现**的分离。
+把 CSS 放进独立文件，可以分别维护内容和表现。不过文件分开之后，样式之间的组织问题仍然存在。
 
 # 组织 CSS 代码
 
-在实际开发中我们发现，使用 class 选择器比使用其他选择器优势更大，因为class选择器是最初的模块化思想。但是随着项目规模的增大，CSS 的一个缺点逐渐浮现出来：全局作用域，这导致我们不得不将这些 class 的命名区别开来。为了解决 CSS 全局作用域和命名冲突的问题，很多大佬、组织提出了一些规范和指南。
+class 可以表达可重复使用的样式。项目里不同模块都写 `.title` 或 `.button` 时，如果没有隔离机制，规则就可能互相影响。命名约定和代码分层主要是在处理这个问题。
 
-如何组织 CSS 代码？这些方法有些是基于面向对象思想的，有些是基于组件化思想的，有些是基于样式规则分类的，有些是基于样式规则分层的，还有些是基于最小化样式规则的。不同的方法论有不同的特点和适用场景。
+下面几种方法关注的层面不同：OOCSS 关注可复用的视觉模式，SMACSS 按职责分类，BEM 规定类名格式，ITCSS 组织规则的层次。
 
-当然，我们现在已经不会去直接使用这些方法了，但了解这些方法也有助于我们一窥大佬们的思想。
+即使用了构建工具，仍然需要给组件和样式划分职责。可以先看这些约定想解决什么，再决定哪些部分适合项目。
 
-下面我们来具体的看一下每种方法。
+
 
 ## OOCSS - Object Oriented CSS
 
 > OOP 的主要要素：类（方法、变量的集合）、对象（类的一个实例） 类与类的关系有继承（父子关系）、实现（类型-定义关系）、依赖（平等关系）、关联（平等关系）、聚合（弱部分-整体关系）、组合（强部分-整体关系）
 
-我们肯定都听说过 OOP（Object-oriented programming - 面对对象编程），那么 OOCSS 同理，是一种面对对象的 CSS 命名方式，它于 2008 年由 Nicole Sullivan 提出。
+OOCSS 借用了面向对象编程的组织思路。笔记中记录的提出者是 Nicole Sullivan，时间为 2008 年。
 
-CSS 本身是声明式的编程语言，不具备任何的面对对象能力，我们需要构建出自己的一套“约定”。在 OOCSS 中，“对象”指 HTML 元素或相关内容（如 CSS 类或 JavaScript 方法）。比如，侧边栏小部件对象可复制用于不同目的（通讯注册、广告块、最近文章等）。**CSS “对象”是一种重复的视觉模式，可以抽象为独立的代码片段。** OOCSS 主要有以下两个原则：
+这里的 CSS“对象”是一种可重复使用的视觉模式。例如侧边栏里的小部件，内容可能分别是订阅、广告或最近文章，但外观结构相近。OOCSS 将这种模式抽成独立的规则，主要有两个原则：
 
 ### 结构和皮肤分离
 
@@ -189,19 +190,19 @@ CSS 本身是声明式的编程语言，不具备任何的面对对象能力，�
 }
 ```
 
-许多开发者认为，OOCSS 易于分享和维护。相比之下，SMACSS 等模块化方法对 CSS 对象有更严格的分类规则。
+OOCSS 先拆开可复用的规则；接下来的 SMACSS 则进一步给规则分类。
 
 ## SMACSS - Scalable and Modular Architecture for CSS
 
-SMACSS（Scalable and Modular Architecture for CSS）即可伸缩及模块化的 CSS 结构，由 Jonathan Snook 在 2011 年雅虎时提出。与 OOCSS 不同的是，SMACSS 的关注点在于网络元素的所属功能。
+SMACSS 是 Scalable and Modular Architecture for CSS 的缩写。这份笔记记录它由 Jonathan Snook 在 2011 年雅虎时期提出，关注的是样式规则承担的职责。
 
 ![](/images/component-library-analysis/1.png)
 
-SMACSS 将网页的 CSS 分为以下几个组件大类：
+它把规则分成五类：
 
 ### Base（基础）
 
-顾名思义，基本规则需要应用于网页的基本元素。下面的示例可以被认为是 SMACSS 中的一部分基本规则：
+Base 设置元素的默认样式，例如：
 
 ```
 body {
@@ -213,17 +214,17 @@ p {
 }
 ```
 
-我们将基本规则应用于**在整个网页中保持一致的元素**。在上面的 SMACSS 示例中，我们希望内容距离左边 20px 显示，段落元素应该有一种特定的字体。
+这个例子设置了 `body` 的左边距和段落字体，作用范围是整个页面。
 
-除了直接元素外，Base 类型的 CSS 还可以使用后代选择器、子选择器和伪类。但是，在创建基本规则时，我们不能使用任何 `!important`。这可能是因为当我们的样式从不同的部分或特异性问题（稍后讨论）开始覆盖时，会显示出不希望的行为。
+Base 也可以使用后代选择器、子选择器和伪类。这里的约定是避免 `!important`，给后续的布局、模块与状态规则留下覆盖空间。
 
-你可能会想到使用 CSS-resets 来代替这些样式，但是这会增加从服务器发送到客户端的代码量。因此，如果你想要创建任何默认设置的 CSS，Base 是一个很好的地方来记下它们。
+reset 与项目默认样式需要一起考虑。Base 用来放项目自己的默认规则，不必因为用了 reset 就省略这一层。
 
 ### Layout（布局）
 
-第二条规则讲的是如何设计网页应用的布局的 CSS。网页的主要部分都属于布局的范畴。为它们设计CSS通常会遇到很多挑战，因为涉及到很多元素，而且用多个 ID 来定义每个布局会让事情变得更复杂。
+Layout 管页面的主要区域，例如页头、侧边栏和内容区。
 
-一个简单的不太成熟的 CSS 设计如下：
+先看一组布局选择器：
 
 ```
 #header, #features, #sidebar {
@@ -231,7 +232,7 @@ p {
 }
 ```
 
-但是，当我们需要根据不同的偏好来设计多种布局时，上面的不太成熟的CSS设计就会失效。在这种情况下，可以用前缀“l”来表示这个类选择器是基于一个布局元素的。
+需要移动端等不同布局时，可以用带 `l-` 前缀的类区分布局变化：
 
 ```
 #header {
@@ -247,9 +248,9 @@ p {
 }
 ```
 
-在上面的示例中，`l-mobile` 类表示它是为了改变与移动端相关的元素的“布局”而构建的。因此，“l”这个名称在 SMACSS 的布局规则中并不是必须使用的。但是，SMACSS 作者建议使用它作为一个标准，以便更好地阅读。
+`l-mobile` 表示移动端布局。`l-` 是命名约定，帮助读者辨认规则的用途，不是 CSS 语法要求。
 
-**题外话：我不同意 SMACSS 的这种在 layout 类型里面用 ID 选择器的行为，我们应该从始至终使用 class 选择器。如下示例**
+我更倾向于在这一层也使用 class，下面是对应的写法：
 
 ```
 .l-header {
@@ -267,9 +268,9 @@ p {
 
 ### Module（模块）
 
-模块是布局元素的较小部分，例如导航、小部件、对话框等。将模块视为布局的一部分会增加不必要的复杂性，因为模块在多个地方使用比大型布局更多，可以把**布局看作是主要的布局，模块看作是次要的布局**。
+Module 管导航、小部件、对话框等可复用部分。与 Layout 分开后，模块放到不同页面区域时，不必把外层布局的约束一并带过去。
 
-模块的命名很符合我们的直觉：
+例如同一类标题模块的几种形式：
 
 ```
 .heading {}
@@ -281,7 +282,7 @@ p {
 
 ### State（状态）
 
-在我们精心制定了布局和模块规则之后，我们还需要考虑元素状态的设计。当一个元素有多个状态时，就需要应用状态规则。例如，一个模块可以处于错误状态（取决于收到的错误）或成功状态。对于这两种状态，模块都需要渲染不同的样式，这就是状态规则的作用。
+State 表达当前状态。例如错误与成功状态可以分别用 `.is-error` 和 `.is-success` 表示：
 
 ```
 .is-error {
@@ -295,7 +296,7 @@ p {
 
 ### Theme（主题）
 
-主题规则是为 Web 应用程序的主题定义的。例如，每个网站都有一个反映业务或基于其他策略的主题。但很多网站可能不需要更换主题的功能，因此这个规则是可选的。
+Theme 管主题相关的外观规则。项目没有主题切换需求时，可以不单独设置这一层。
 
 ```
 .button-large {
@@ -304,13 +305,13 @@ p {
 }
 ```
 
-这种规则看起来和默认规则很像，但基本规则只针对默认的外观，而且往往是类似于重设为默认的浏览器设置；而主题规则则更像是一种风格设计，它给出了最终的外观，对于这个特定的色彩方案是独一无二的。
+Theme 与 Base 的区别主要在职责：Base 是默认规则，Theme 是特定主题的外观。上面的按钮尺寸示例本身不足以说明主题切换，还要结合项目如何组织主题来看。
 
 ## BEM - Block Element Modifier
 
 ![](/images/component-library-analysis/2.png)
 
-BEM（Block Element Modifier）是一种典型的 CSS 命名方法论，由 Yandex 团队在 2009 年前提出。BEM 和上面两种方法非常的不一样，他是通过全局统一的格式来命名出独一无二的 class，每一个 class 都由以下部分组成：
+BEM 规定类名的组成方式：Block、Element、Modifier。这份笔记记录它由 Yandex 团队在 2009 年前提出；与前面按职责拆规则的方法相比，它更直接地约定名称。
 
 ### Block
 
@@ -318,13 +319,13 @@ BEM（Block Element Modifier）是一种典型的 CSS 命名方法论，由 Yand
 
 ### Element
 
-一个区块的一部分，没有独立的意义，在语义上与它的区块相联系。就是说 Element 不能脱离 Block 存在。比如`menu-item`, `list-item`, `checkbox-caption`, `header-title`等。如果 Element 里面还有 Element，使用 `-` 分割。
+Element 是 Block 内有语义联系的部分，例如 `menu-item`、`list-item`、`checkbox-caption`、`header-title`。下面的示例还用 `-` 连接了元素名称，重点是能从名称看出归属。
 
 ### Modifier
 
 块或元素上的一个标志。用它们来改变外观或行为，类似于 SMACSS 的 State + Theme。比如`disabled`, `highlighted`, `checked`, `fixed`, `size-big`, `color-yellow` 等。
 
-BEM 的规则非常清晰易懂，而且可以使用 SCSS 等预处理器来完成，在 2020 年的 CSS 调查里面位居榜首。
+笔记还记下 BEM 在“2020 年 CSS 调查中位居榜首”，但没有留下对应题目和统计口径，不能据此作总体排名。下面只看如何用 SCSS 组织名称：
 
 ```
 // 配合 SCSS 语法
@@ -345,10 +346,10 @@ BEM 的规则非常清晰易懂，而且可以使用 SCSS 等预处理器来完�
 
 ![](/images/component-library-analysis/3.png)
 
-作为原子化 CSS 的思路来源，ITCSS 是一种比较新的 CSS 代码组织方法。他 CSS 命名无关，可以与 BEM、SMACSS 或 OOCSS 等方法一起使用。ITCSS 把 CSS 代码的特征分成了三个维度，再根据这三个维度进行分层：
+ITCSS 按规则的影响范围和覆盖关系组织 CSS，不单独规定类名，可以与 BEM、SMACSS 或 OOCSS 配合。这里按三个维度理解它的分层：
 
 1.  Reach - 范围：CSS 代码所能影响的范围
-1.  Specificity - 特异性：CSS 代码的普适程度
+1.  Specificity - 特异性：选择器参与覆盖竞争时的权重
 1.  Explicitness - 明确性：CSS 代码的名称确定性
 
 根据以上特征的不同，ITCSS 将 CSS 代码分为以下几层：
@@ -361,7 +362,7 @@ BEM 的规则非常清晰易懂，而且可以使用 SCSS 等预处理器来完�
 - **Components** 组件 -- 特定的UI组件。这是我们大部分工作发生的地方。我们经常将UI组件由Objects和Components组成。
 - **Utilities** 实用工具 -- 实用工具和辅助类，能够覆盖三角形中的任何东西，例如，隐藏辅助类。
 
-可以看到，ITCSS 的分层较多，每层的样式都可以覆盖前面一层的样式。将 ITCSS 层组织到子文件夹中，并使用 Sass 或其他预处理器编译新添加的文件：
+这些层从基础规则逐渐走向具体组件和覆盖工具。可以按层建立文件夹，再安排编译顺序；规则是否覆盖仍取决于选择器和级联，文件所在层次本身不会强制覆盖。
 
 ```
 // ITCSS + SCSS
@@ -387,30 +388,30 @@ BEM 的规则非常清晰易懂，而且可以使用 SCSS 等预处理器来完�
 .u-name
 ```
 
-ITCSS 只是一种组织结构，这种组织结构清晰易懂，我们可以快速组织并分享我们的 CSS 代码。ITCSS 和 BEM 一起使用的时候，有一个独特的名称：BEMIT，使用的时候无需去思考 CSS 代码存放的位置，只需要在 BEM 前面加上 ITCSS 的前缀即可。
+ITCSS 管规则放在哪里，BEM 管名称怎么写，两者结合称为 BEMIT。前缀能提示职责，具体放在哪一层仍要根据规则用途判断。
 
 # pre-processor
 
 ![](/images/component-library-analysis/4.png)
 
-上面我们提到了“预处理器”，可能你会疑问，预处理器是什么东西？
+前面的代码用到了嵌套和变量，接着看负责转换这些语法的预处理器。
 
-CSS 预处理器是一种程序，可让您从预处理器自己的独特语法生成 CSS。简单来说，预处理器就是一个编译器，有了这个编译器，我们就可以用很多原生 CSS 不具有的特性，例如 mixin、嵌套选择器、继承选择器等。这些特性使 CSS 结构更具可读性和更易于维护。
+预处理器把自己的语法编译成 CSS，例如 mixin、嵌套和继承等。这篇讨论的是当时使用这些工具的理由，不据此判断今天哪些能力仍只能由预处理器提供。
 
-每个 CSS 预处理器都有自己的语法，它们编译成常规 CSS，以便浏览器可以在客户端呈现它。CSS 预处理器以或多或少不同的方式做类似的事情，并且每个都有自己的语法和生态系统（工具、框架、库）。现在流行的 CSS 预处理器大概有以下三个：
+下面整理 Sass、LESS 和 Stylus。它们都生成浏览器可使用的 CSS，但语法和工具支持不同。
 
 ## [Sass & SCSS](https://sass-lang.com/): Syntactically Awesome Style Sheets
 
-Sass 是最流行和最古老的 CSS 预处理器，最初发布于2006年。它的创造者 Natalie Weizenbaum 和 Hampton Catlin 受到 Haml模板语言的启发，该语言为 HTML 增加了动态功能。他们的目标是在 CSS 中也实现类似的动态功能。因此，他们想出了一个 CSS 预处理器，并将其命名为 Syntactically Awesome Style Sheets。
+Sass 是 Syntactically Awesome Style Sheets 的缩写。这份笔记记录它最初发布于 2006 年，Natalie Weizenbaum 和 Hampton Catlin 受到 Haml 模板语言启发，希望给样式编写增加动态能力。
 
-Sass 预处理器允许我们使用变量、if/else 语句、for/while/each 循环、继承、运算符、插值、混合器和其他动态功能，然后将代码编译成网络浏览器可以解释的普通CSS。
+Sass 提供变量、条件、循环、继承、运算、插值和混合器等机制，编译后输出普通 CSS。
 
 Sass 有两种语法。
 
 - .sass 文件扩展名使用基于缩进的旧语法。
 - SCSS 是 Sass 3 引入新的语法，是 Sassy CSS 的简写，是更新和更广泛使用的语法，使用 .scss 文件扩展名。
 
-下面我们来看个例子，可以看到 SCSS 语法更类似 CSS 语法，没有什么上手难度：
+SCSS 保留了更接近 CSS 的括号和分号写法。下面是当时留下的语法对照，格式比较压缩：
 
 ```
 /* Sass */
@@ -423,7 +424,7 @@ $primary-color: seashell $primary-bg: darkslategrey  body
 /* SCSS */ $primary-color: seashell; $primary-bg: darkslategrey;  body {     color: $primary-color;     background: $primary-bg; }
 ```
 
-Sass 提供了一些很方便我们编写 CSS 的机制，比如 mixin 函数：
+mixin 可以集中维护一组规则，再通过参数调整：
 
 ```
 @mixin card($width, $height, $bg, $border) {       width: $width;       height: $height;       background: $bg;       border: $border; }
@@ -493,56 +494,56 @@ Sass 提供了一些很方便我们编写 CSS 的机制，比如 mixin 函数：
 
 - `@import` 模块化
 
-还有其他很多详细的语法，大家可以去[官方文档](https://sass-lang.com/documentation/syntax)了解阅读，这里不多赘述。
+其他语法可查 [Sass 文档](https://sass-lang.com/documentation/syntax)。链接指向现行文档，具体用法需结合项目版本。
 
 ## [LESS](https://lesscss.org/): "Leaner Style Sheets"
 
-LESS 由 Alexis Sellier 在 Sass 之后的 2009 年发布，LESS 受 Sass 影响很多，但其本身也影响了 SCSS。之后 Bootstrap 决定从 LESS 转移到 Sass，这对 LESS 的普及是一个巨大的打击，导致目前来说 SCSS 的普及率高过 LESS 非常多。
+这份笔记记录 LESS 由 Alexis Sellier 在 2009 年发布，与 Sass、SCSS 的语法演进有联系，也提到 Bootstrap 后来从 LESS 迁向 Sass。仅凭这次迁移，不能判断两者整体使用量的变化原因。
 
-LESS 的语法非常像 SCSS，但其逻辑处理能力较弱，有兴趣的小伙伴可以去[官网文档](https://lesscss.org/)了解。
+LESS 的写法与 SCSS 有相近之处，具体功能可以查 [LESS 文档](https://lesscss.org/)。
 
 ## [Stylus](https://stylus-lang.com/): Expressive, dynamic, and robust CSS
 
-Stylus 的第一个版本是在 LESS 一年后推出的，由前 Node.js 开发者 TJ Holowaychuk 在2010年推出。Stylus 结合了Sass 强大的逻辑能力和 LESS 简单明了的设置，让他在预处理器的市场份额有着一席之地。
+笔记中记录 Stylus 由前 Node.js 开发者 TJ Holowaychuk 在 2010 年推出，尝试结合逻辑能力与灵活的语法。
 
-当然虽然 Stylus 语法灵活，支持两种不同的语法，但是这也带来了容易导致混乱的缺点，而且大部分人都选择用 Sass，导致目前远不如 Sass 的影响力。
+Stylus 支持不同的语法写法。团队使用时，需要约定统一风格，避免同一项目里出现多种写法。
 
 ![](/images/component-library-analysis/5.png)
 
-我们可以很清晰的看到，在SCSS 推出 + node-sass 在重构为 dart-sass 之后，爆发式增长，LESS 和 stylus 都没有什么抵抗的力量。如果目前需要选择一个预处理器，这里推荐使用 Sass 的 SCSS 语法。
+图里保留了当时对 Sass、LESS 与 Stylus 使用量的比较。这张图不能单独证明增长来自 SCSS 或从 node-sass 转向 dart-sass，也不能代替项目里的工具比较。我的偏好是 SCSS 的写法。
 
-不过不管这些 CSS 预处理器流行度怎么样，他们都是能帮助我们快速组织编写 CSS 代码的工具，因地制宜即可。甚至后面我们就知道了，我们也不是非要用他们不可。
+是否引入预处理器，还要看项目需要哪些语法，以及构建链是否方便维护。
 
 # [PostCSS](https://postcss.org/)
 
 ![](/images/component-library-analysis/6.png)
 
-好了经过上面的部分，我猜你对 Less、Sass 和 Stylus 等预处理程序已经很熟悉。这些工具是当今网络开发生态系统的重要组成部分。但是，传统的预处理器有几个问题：
+预处理器提供了一套语法，但语法转换与后续处理是不同的需求。看 PostCSS 时，我主要关心插件能否独立参与这些步骤：
 
-- 它们不遵循 CSS 标准。每个预处理器都已经有了自己的标准。遗憾的是，它们不以与 W3C 标准兼容为目标，这意味着它们不能把它们的功能作为 polyfills，用于早期测试较新的 W3C 标准。
-- 它们是不可扩展的。无论你选择哪种预处理器，你都被限制在它所提供的功能集上。如果你需要在此基础上的任何功能，你需要在构建过程中单独添加。如果你想写你的扩展，你就得靠自己了。
+- 预处理器有自己的语法，使用这些语法不等于已经获得某项新 CSS 标准的兼容转换。
+- 内置功能不能满足需求时，可能需要增加独立的处理步骤；具体扩展方式要看工具，不能一概称为不可扩展。
 
-可以看到，尽管传统的预处理器带来了许多很优秀的特性，但他们严格限制了我们的 CSS 编写思路。这就给了 PostCSS 用武之地。
+PostCSS 把规则处理交给插件，便于按需求组合转换。
 
 ![](/images/component-library-analysis/7.png)
 
-上面这幅图是 PostCSS 的原理，很简单地，你可以把 PostCSS 理解成 Babel 一样的代码转换工具，将我们编写的 CSS 转成可以浏览器可以直接识别的 CSS，而预处理器相当于 Typescript。**PostCSS 接收一个 CSS 文件并提供了一个** **API** **来分析、修改它的规则（通过把 CSS 规则转换成一个** **[抽象语法树](https://zh.wikipedia.org/wiki/%E6%8A%BD%E8%B1%A1%E8%AA%9E%E6%B3%95%E6%A8%B9)** **的方式）。在这之后，这个 API 便可被许多** **插件** **利用来做有用的事情，比如寻错或自动添加 CSS vendor 前缀。**
+PostCSS 解析 CSS，并提供 API 操作 [抽象语法树](https://zh.wikipedia.org/wiki/%E6%8A%BD%E8%B1%A1%E8%AA%9E%E6%B3%95%E6%A8%B9)。插件通过这套 API 检查或修改规则，例如添加浏览器前缀。可以借 Babel 理解这种插件转换的思路，但 PostCSS 本身不会自动完成所有兼容处理。
 
 ![](/images/component-library-analysis/8.png)
 
-可以看到，PostCSS 的下载次数远超预处理器之和，这是因为很多很多三方库都基于 PostCSS 的能力来构建。同时 PostCSS 拥有众多插件，比如：Autoprefixer（前缀添加）、lost（基于 calc 的栅格系统）、Stylelint（CSS 格式检查）、CSSNext（使用浏览器未支持的 CSS语法） 等，这些优秀的插件都基于 PostCSS 的能力。
+图中记录了当时的下载量比较。笔记列出的工具包括 Autoprefixer（前缀添加）、lost（基于 calc 的栅格系统）、Stylelint（样式检查）和 CSSNext（较新 CSS 语法的转换）。这些名称保留当时的使用背景，不表示它们都仍适合新项目。
 
-了解完这些之后，我们就会明白，我们其实没有必要纠结使用哪些预处理器了，只需要在 PostCSS 里面安装我们想要的预处理器语法插件就行。
+使用 PostCSS 时，仍要确认插件实际支持哪些语法。它与预处理器可以配合，但不能把安装一个插件视为完整替代任意预处理器。
 
 # 高级模块化
 
-其实上面我们介绍的组织 CSS 代码都是具有模块化思想的，但是这些模块化思想都是非自动化的，说白了就是，我们需要时时刻刻记住这些约定，这对于我们的开发效率来说影响甚大。随着 React 框架的火热，前端代码模块不再遵循“关注点分离”原则，而是一个 HTML+CSS+JS 构成的组件为核心。但是 React 并没有像 Vue 一样提供了 scope 等内置机制，因为 React 本身的设计原则决定了其不会提供原生的 CSS 封装方案。旧的代码模块化约定已经不能适应新的开发方式的需求，模块化的两种最强形式呼之欲出。
+命名约定需要开发者共同遵守，构建工具则可以自动处理部分隔离工作。在组件化开发中，结构、逻辑和样式经常按组件放在一起。React 项目需要选择样式方案；Vue 单文件组件里的 scoped 样式也提供了一种组织方式。下面分别看 CSS Modules 和 CSS-in-JS。
 
 ## [CSS Modules](https://github.com/css-modules/css-modules)
 
-首先是对我们代码编写方式影响较小的 CSS Modules。其实 CSS Modules 在本质上也是 CSS-in-JS 的一种，但其功能比较简单，也类似于关注点分离的写法，所以其从 CSS-in-JS 中独立出来并成为一种独立的思想。
+CSS Modules 保留独立的 CSS 文件，同时把类名映射提供给 JavaScript 使用。这里将它作为一种局部作用域方案单独讨论。
 
-CSS Modules 的核心很简单，就是只管理好 CSS 代码的作用域，让我们可以通过类似 ESM 的方式来组织 CSS 代码。他以 CSS 文件模块为单元，将模块内的选择器附上特殊的哈希字符串，以实现样式的局部作用域。对于大多数 React 项目来说，这种方案已经足够用了。
+CSS Modules 以文件为模块，在构建时转换局部类名，组件通过导入的映射引用这些类。下面看局部、全局和组合三种写法。
 
 ![](/images/component-library-analysis/9.png)
 
@@ -603,9 +604,9 @@ CSS Modules 有以下几个重要特性：
     <h1 class="_2DHwuiHWMnKTOYG45T0x34 _10B-buq6_BEOTOl9urIjf8">
     ```
 
-使用 CSS Modules 之后，我们不需要使用任何类似 BEM 的命名约定了，因为我们的 CSS 代码的作用域已经被分隔开了，不要命名一个项目唯一的 CSS 类名。同时我们可以在项目的组件文件夹中直接编写 CSS 文件，这对于我们的开发体验来说是一个质的飞跃。
+局部类名转换后，不必给每个类手动设计一个全项目唯一的名字。CSS 文件可以跟组件放在一起。模块内部仍然需要易读的命名；是否继续用 BEM，取决于团队约定。
 
-CSS Modules 可以配合 PostCSS 一起使用，这样我们也可以用各种额外特性，例如 CSS 变量或者预处理器语法等。
+CSS Modules 可以与 PostCSS 配合。需要额外语法转换时，再配置相应的处理步骤。
 
 ## CSS-in-JS
 
@@ -613,25 +614,25 @@ CSS-in-JS 在 2014 年由 Facebook 的员工 Vjeux 在 NationJS 会议上提出�
 
 ![](/images/component-library-analysis/10.png)
 
-很明显，CSS-in-JS 是一种没有标准规范的思想，他的主要要义就是在 JS 里面写 CSS。这就导致其实现非常非常多，目前有六十多种 CSS-in-JS 的实现。每隔一段时间，都会有新的语法方案或实现，尝试补充、增强或是修复已有实现。
+CSS-in-JS 是在 JavaScript 中组织样式的一类方案，具体 API 和处理时机没有统一形式。笔记当时记下“六十多种实现”，但没有列出统计范围；这里主要比较几种具体工具。
 
 ![](/images/component-library-analysis/11.png)
 
-CSS-in-JS 虽然解决了一些直接编写 CSS 代码的问题，但他也带来了一些问题：
+这类方案需要考虑额外的依赖、迁移和运行成本：
 
-- 使用 CIJ 可能是一种不必要的需求。如果开发者能够充分理解 CSS 的基本概念，比如特异性、级联、继承等，同时运用一些预处理或后处理工具（例如 scss/postcss）和规范化的命名方法（例如 BEM），那么纯 CSS 就可以满足开发需求，无需引入额外的复杂度。
-- CIJ 的方案和工具琳琅满目，但是缺乏统一的标准和规范，许多还处于试验性或不稳定的阶段，使用起来存在较大的风险和不确定性。一旦选择了某个方案，就可能面临这个方案被废弃或不兼容的问题，导致代码难以维护或迁移。
-- CIJ 会增加运行时的性能开销，因为它需要在浏览器中动态生成和注入 CSS，这会消耗更多的内存和 CPU 资源，影响页面的加载速度和用户体验。
+- 如果现有的 CSS、命名约定和构建处理已经满足需求，引入新方案会增加需要维护的东西。
+- 方案之间的 API 不同。选择前需要看维护状态，以及未来迁移时哪些代码要改。
+- 在浏览器中动态生成和注入样式的实现会有运行开销。构建时提取样式的方案，则要分别检查生成结果，不能把这项成本套到所有 CSS-in-JS 工具。
 
-下面我们来看看几种 CIJ 的具体实现。
+先看 styled-components。
 
 #### [styled-components](https://styled-components.com/)
 
 ![](/images/component-library-analysis/12.png)
 
-styled-components 是一种 CSS-in-JS 的实现方式，它可以让你在 React 组件中直接写 CSS 代码，从而实现组件和样式的一一对应。这样，你就不需要再为每个组件定义一个单独的 CSS 文件或者使用类名来管理样式了，而是可以将样式和组件的逻辑和结构紧密地结合在一起。
+styled-components 通过样式化组件组织 CSS。下面将按钮元素和样式一起定义：
 
-styled-components 的原理是利用了 JavaScript 的标签模板字符串（tagged template literals）功能，将 CSS 代码作为一个函数的参数传递，然后在运行时动态生成和注入样式表。例如，你可以这样定义一个按钮组件：
+这个写法使用 JavaScript 的标签模板字符串，将样式传给 `styled.button`，由库处理样式生成与注入：
 
 ```
 import styled from 'styled-components';
@@ -643,52 +644,52 @@ const Button = styled.button`
 `;
 ```
 
-这里，styled.button 是一个函数，它接收一个模板字符串作为参数，并返回一个 React 组件。这个组件会渲染一个带有指定样式的按钮元素。你可以像使用任何其他 React 组件一样使用这个 Button 组件：
+返回的 `Button` 可以作为 React 组件使用：
 
 ```
 <Button>Click me</Button>
 ```
 
-styled-components 有以下几个优势：
+这个写法提供了几种能力：
 
-- 可以避免 CSS 类名的冲突和全局污染，因为它会自动生成唯一的类名。这样，你就不需要担心命名冲突或者覆盖了其他组件的样式了。
-- 可以利用 JavaScript 的变量和逻辑来动态地控制样式。例如，你可以根据 props 或者主题来改变组件的颜色、大小、边距等属性。
-- 可以支持主题和样式继承等功能，方便实现 UI 的一致性。例如，你可以使用 ThemeProvider 组件来提供一个全局的主题对象，然后在任何组件中通过 props.theme 来访问它。
+- 自动生成类名，减少手动命名的冲突。
+- 使用 JavaScript 变量或 props 控制颜色、大小、边距等样式。
+- 使用 `ThemeProvider` 传递主题对象，再通过 `props.theme` 读取。
 
-styled-components 也有以下几个劣势：
+引入项目时，我还会检查这些问题：
 
-- 可能会增加代码的复杂度和可读性，因为需要在 JavaScript 中混合写 CSS 代码。这样，你就不能利用一些专门针对 CSS 的工具或者编辑器功能了，而且也可能降低代码的可维护性和可测试性。
-- 可能会影响运行时的性能，因为需要在浏览器中解析和注入样式表。这样，你就不能利用一些针对 CSS 的优化技术了，比如 CSS 提取、压缩、缓存等。
-- 可能会导致样式的重复或冗余，因为每个组件都会生成一个独立的样式表。这样，你就不能利用 CSS 的继承和级联机制了，而且也可能增加最终打包后的文件大小。
-- 可能会与一些第三方库或工具不兼容，比如 CSS 模块、CSS 提取、CSS Lint 等。这样，你就不能使用这些库或工具来提高你的开发效率和代码质量了。
+- CSS 写在 JavaScript 中后，现有编辑器提示和检查工具是否仍能使用。
+- 样式解析和注入的开销，以及当前构建工具能做哪些提取、压缩或缓存处理。
+- 生成结果是否有重复规则，最终样式体积多大。
+- 与已有 CSS Modules、样式提取和检查工具如何配合。
 
-总之，styled-components 可以让你在 React 组件中直接写 CSS 代码，从而实现组件和样式的一一对应。如果你想使用 styled-components 来开发你的 React 应用，你需要根据你的具体需求和场景来权衡它的利弊，选择适合你的方案。
+这些问题需要看具体配置和生成结果，不能仅凭采用 styled-components 就断言无法使用 CSS 的继承、级联或优化。
 
 #### [Emotion](https://emotion.sh/docs/introduction)
 
 ![](/images/component-library-analysis/13.png)
 
-Emotion 是另外一个流行的 CSS-in-JS 库，由于这两个库比较类似，我们主要就针对这两个库做一些对比：
+Emotion 也提供组件化的样式 API。这里保留当时与 styled-components 的比较：
 
-- styled-components 和 emotion 都使用了模板字符串（template literals）来创建样式化的组件，这样可以保持CSS的语法和高亮，同时也可以使用JavaScript的变量和表达式。
+- 两者都支持通过模板字符串创建样式化组件，在样式中使用 JavaScript 变量和表达式。
 
-- styled-components 和 emotion 都支持主题（themes），即一组全局的样式变量，可以在不同的组件中共享和使用。它们也都支持媒体查询（media queries），即根据不同的设备或屏幕尺寸来调整样式。
+- 两者都支持主题和媒体查询，分别用于共享样式变量和按条件调整样式。
 
-- styled-components和emotion的主要区别在于：
+- 当时关注的区别：
 
-  - emotion支持更多的API，例如css prop，@emotion/core，@emotion/styled等，而styled-components只支持styled API。可以说这点是差距最大的一点。
-  - emotion提供了更好的开发者体验，例如支持自动标签（auto-labels），即在开发者工具中显示组件的名称，以及支持源映射（source maps），即在开发者工具中显示样式的来源文件和行数。
-  - emotion具有更高的渲染速度，即在浏览器中将样式应用到组件上所需的时间。根据测试结果，emotion比styled-components 快了约10%。
+  - Emotion 的 `css` prop、`@emotion/core`、`@emotion/styled` 等入口提供了不同写法；这里的包名属于当时笔记，不据此断言 styled-components 只有一个 API。
+  - Emotion 的 auto-labels 与 source maps 可帮助定位组件名称、样式来源和行号。是否方便还要结合项目的编译配置。
+  - 笔记记下了“Emotion 比 styled-components 快约 10%”的说法，但没有保留测试版本、条件和结果出处。这个数字不能用于判断当前项目的性能。
 
-最终我们还是需要根据自己的项目需求和偏好来选择合适的库。如果项目需要更多的灵活性和性能，可以选择 emotion。如果项目需要更简单和一致的API，可以选择 styled-components。
+要比较这两个库，我会先看项目需要的 API、主题方式和调试支持。性能差异则需要用同一场景测量。
 
 #### [Stitches](https://stitches.dev/) & [vanilla-extract](https://vanilla-extract.style/)
 
-下面介绍的是两个比较新且评价较好的的 CSS-in-JS 库。
+接着看当时关注的 Stitches 和 vanilla-extract。
 
 ![](/images/component-library-analysis/14.png)
 
-Stitches \*\*是一个 TypeScript 友好的 CSS-in-JS 库，具有接近零运行时，服务器端渲染，多变量支持和一流的开发人员体验。vanilla-extract 是一个 Stitches 的竞争对手，称自己为“CSS Modules-in-TypeScript”，vanilla-extract 是真正的零运行时（Stitches 6 kB gzipped）。
+Stitches 提供 TypeScript 支持、SSR 和 variants；vanilla-extract 则把自己描述为“CSS Modules-in-TypeScript”，在构建时生成 CSS。笔记还记下 Stitches 约 6 kB gzipped 的体积，没有注明测量版本；不能据此把 Stitches 也理解成没有样式运行时。
 
 > 类似 styled-components 的 CSS-in-JS 库由于需要在运行时动态注入 CSS，性能较差，而新的 CSS-in-JS 库基本都抛弃了运行时的思路，转而在编译阶段生成固定的 CSS 代码。这样有两个好处：
 >
@@ -696,7 +697,9 @@ Stitches \*\*是一个 TypeScript 友好的 CSS-in-JS 库，具有接近零运�
 > 1.  可以完美支持 SSR
 > 1.  加快客户端运行速度
 
-具体到他们的区别，可以看看这篇文章：[Vanilla-Extract & Stitches: A Comparison](https://dev.to/nayaabkhan/vanilla-extract-stitches-a-comparison-58c2)，总之，vanilla-extract 是最为先进、迅猛的 CSS-in-JS 库，因为他是真正的零运行时库，**FCP 可能稍大，但** **TTL** **很小，用户体验很棒，适合开发大型应用。** 我们来简单看个 vanilla-extract 的 demo：
+上面保留的是当时的概括，其中“新的库基本都抛弃运行时”“完美支持 SSR”说得过满。构建时提取样式可以减少客户端处理工作，实际体积、SSR 接入和性能仍需分别检查。
+
+两者的比较资料是 [Vanilla-Extract & Stitches: A Comparison](https://dev.to/nayaabkhan/vanilla-extract-stitches-a-comparison-58c2)。笔记还曾用 FCP 和“TTL”描述体验，但没有测量条件，后一个指标的含义也没写清。这里不保留据此排名的结论，只看下面的 vanilla-extract 示例：
 
 ```
 import { style } from '@vanilla-extract/css';
@@ -737,7 +740,7 @@ export default Demo;
 
 ![](/images/component-library-analysis/15.png)
 
-原子 CSS 就像是实用工具优先（utility-first）CSS 的一个极端版本: 所有 CSS 类都有一个唯一的 CSS 规则。原子 CSS 最初是由 Thierry Koblentz (Yahoo!)在 2013 年[挑战 CSS 最佳实践](https://link.juejin.cn?target=https%3A%2F%2Fwww.smashingmagazine.com%2F2013%2F10%2Fchallenging-css-best-practices-atomic-approach%2F)时使用的。在前端构建工具没有成熟的时候，这种思想基本很难实现，但是现在借助 PostCSS 的力量，有一些原子化 CSS 库例如 [Tailwind CSS](https://tailwindcss.com/) 开始被广泛使用。
+原子化 CSS 将小的样式规则写成可组合的类，与 utility-first 的思路相近。笔记引用了 Thierry Koblentz 在 2013 年的文章 [挑战 CSS 最佳实践](https://link.juejin.cn?target=https%3A%2F%2Fwww.smashingmagazine.com%2F2013%2F10%2Fchallenging-css-best-practices-atomic-approach%2F)，并把 [Tailwind CSS](https://tailwindcss.com/) 作为工具例子。先看两个简单规则：
 
 ```
 .m-0 {
@@ -749,20 +752,22 @@ export default Demo;
 }
 ```
 
-下面这个在组件数量膨胀的情况下，使用原子化和不使用原子化的性能图。可以看到不使用原子化 CSS 的时候是线性增长，而使用之后是对数增长。因为原子化 CSS 的上限是固定的，而普通 class 的上限是不确定的，随着组件数量的增加，使用的原子化 CSS class 数量趋于稳定，而普通 class 数量依旧在一路狂奔。
+下图比较组件增加时的样式增长。当多个组件复用相同的工具类，就有机会减少重复规则。图中普通样式近似线性增长、原子类增长变缓，但不能仅凭曲线断言后者一定是对数增长，或所有项目的类数量都有固定上限。
 
 ![](/images/component-library-analysis/16.png)
 
-[Tailwind CSS](https://tailwindcss.com/) 这里就不多介绍了，其流行程度完全超过了流行程度最高的组件库 MUI（人们都喜欢自己造轮子）。而 Tailwind CSS 的最新竞对 [UnoCSS](https://unocss.dev/)，由 Vite 核心团队打造，不使用 PostCSS，性能比 Tailwind CSS 快 100 倍。具体快的来龙去脉可以参考这篇文章：[重新构想原子化 CSS](https://antfu.me/posts/reimagine-atomic-css-zh)。
+当时我还关注 [Tailwind CSS](https://tailwindcss.com/) 和不依赖 PostCSS 的 [UnoCSS](https://unocss.dev/)。笔记里有“快 100 倍”的数字，对应的阅读资料是 [重新构想原子化 CSS](https://antfu.me/posts/reimagine-atomic-css-zh)；比较时需要看其中的测试对象和条件，不能把生成工具的速度直接当成页面运行速度。笔记没有提供 Tailwind 与 MUI 使用量的可比统计，这里也不据此给工具排名。
 
-当然原子化 CSS 也有缺点：
+原子化 CSS 也有需要处理的成本：
 
-- 不易维护。如果要修改常用的原子类，如 m20（表示 margin 20px ），要么改变它的定义（违背它的命名），要么批量替换它的引用（费时费力）。如果只要修改部分引用，就更麻烦了。
-- 学习成本。影响开发效率，解决方案安装对应的vscode插件，语法提示能够帮助我们，但是仍然无法完全避免去翻官方文档。
+- 修改常用尺寸时，需要考虑类名和含义是否仍一致。例如 `m20` 表示 20px 的 margin，直接改规则会让名称失真，改引用则需要明确影响范围。
+- 工具类名称和配置有学习成本。VS Code 插件可以提供提示，具体写法仍需查对应文档。
 
-# 总结
+# 选择时看什么
 
-希望你能通过以上，了解 CSS 的发展脉络，在开发过程选择合适的 CSS 技术提高我们的开发效率。随着前端的发展，CSS 技术仍然在不断进化，我们也要时刻保持学习的心态，去接触最前沿的知识。
+这些方法没有统一的替换顺序。命名约定处理代码组织，CSS Modules 处理局部类名，预处理器和 PostCSS 处理语法与转换，CSS-in-JS 和原子化 CSS 则改变了样式的编写方式。
+
+我的关注点是：规则放在哪里，作用范围是否清楚，动态样式怎么表达，最终生成什么，以及团队以后如何修改。工具可以一起使用，但每增加一层，都要能解释它解决了哪个具体问题。
 
 # 参考
 

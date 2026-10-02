@@ -1,18 +1,14 @@
 ---
 import { getCollection, render, type CollectionEntry } from 'astro:content'
 import PostLayout from '../../layouts/PostLayout.astro'
-
+import { published, readingMinutes } from '../../lib/posts'
 export async function getStaticPaths() {
-  const posts = await getCollection('posts', ({ data }) => !data.draft)
-  return posts.map(post => ({ params: { id: post.id }, props: { post } }))
+  const posts = (await getCollection('posts')).filter(published)
+  return posts.map(post=>({params:{id:post.id},props:{post}}))
 }
-
 interface Props { post: CollectionEntry<'posts'> }
-const { post } = Astro.props
-const { Content } = await render(post)
-const canonical = new URL(`/writing/${post.id}/`, Astro.site).href
+const { post }=Astro.props
+const { Content, headings }=await render(post)
+const canonical=new URL(`/writing/${post.id}/`,Astro.site).href
 ---
-
-<PostLayout title={post.data.title} description={post.data.description} date={post.data.date} duration={post.data.duration} tags={post.data.tags} canonical={canonical}>
-  <Content />
-</PostLayout>
+<PostLayout title={post.data.title} description={post.data.description} date={post.data.date} minutes={readingMinutes(post.body)} tags={post.data.tags} canonical={canonical} headings={headings}><Content /></PostLayout>
