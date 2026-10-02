@@ -14,7 +14,7 @@ const notes = posts.filter(p=>p.id!=='recompute-case-study').slice(0,3)
         <h1 id="intro-title">构建工具。<br><span>拆解问题。</span></h1>
         <p class="hero-description">我是 Heggria，在上海的 <a href="https://github.com/nexu-io/open-design">OpenDesign</a> 做开发。这里放我做的开源工具、界面实验，以及做它们时留下的笔记。</p>
         <div class="hero-links"><a class="button-primary" href="/work/">看看我的项目 <span aria-hidden="true">↗</span></a><a class="text-link" href="/about/">认识我</a></div>
-        <div class="hero-byline"><img src="/avatar.jpg" alt="" width="36" height="36"/><span>目前主要维护 <a href="https://github.com/heggria/taskflow">taskflow</a><small>Agent 工作流 · TypeScript · 开源</small></span></div>
+        <div class="hero-byline"><img src="/avatar.jpg" alt="" width="36" height="36"/><span>正在做 <a href="/work/taskflow/">taskflow</a> 与 <a href="/work/flowgate/">FlowGate</a><small>Agent 工作流 · macOS 工具 · 开源</small></span></div>
       </div>
       <div class="hero-exhibit">
         <div class="exhibit-caption"><span>EXPERIMENT 001</span><a href="/lab/">打开实验 <span aria-hidden="true">↗</span></a></div>
@@ -32,13 +32,15 @@ const notes = posts.filter(p=>p.id!=='recompute-case-study').slice(0,3)
           <div class="contract-strip" aria-hidden="true"><span>PLAN</span><i></i><span>RUN</span><i></i><span>INSPECT</span></div>
           <div class="card-bottom"><span>设计案例 · 实验 · 源码</span><span>01</span></div>
         </a>
-        <a class="work-card field-card" href="https://heggria.github.io/selffield/">
-          <div class="card-topline"><span>个人实验 / IN THE BROWSER</span><span aria-hidden="true">↗</span></div>
-          <h3>SelfField<span>留一点空间，<br>给变化中的自己。</span></h3>
-          <p>记录回答与上下文，保留相互矛盾的想法。数据存在自己的浏览器里。</p>
-          <div class="card-bottom"><span>打开项目</span><span>02</span></div>
+        <a class="work-card flowgate-card" href="/work/flowgate/">
+          <div class="card-topline"><span>个人开源 / macOS NETWORKING</span><span aria-hidden="true">↗</span></div>
+          <div class="flowgate-card-title"><img src="/images/flowgate-icon.svg" width="66" height="66" alt="" loading="lazy"/><h3>FlowGate</h3></div>
+          <p>把订阅、节点、分流和连接，<br>放在一个清楚的工作区。</p>
+          <div class="flowgate-card-route" aria-hidden="true"><span>订阅</span><i>→</i><span>规则</span><i>→</i><span>连接</span></div>
+          <div class="card-bottom"><span>Apple Silicon · 开发预览</span><span>02</span></div>
         </a>
       </div>
+      <a class="other-project" href="https://heggria.github.io/selffield/"><span class="eyebrow">ALSO EXPLORING</span><strong>SelfField</strong><span>记录回答与上下文，留一点空间给变化中的自己。</span><span aria-hidden="true">↗</span></a>
       <div class="company-line"><span class="company-label">目前的工作</span><a href="https://github.com/nexu-io/open-design">OpenDesign <span aria-hidden="true">↗</span></a><p>在团队里做开源、本地优先的设计工具。</p><span class="team-note">团队项目</span></div>
     </section>
     <section class="writing-selection" aria-labelledby="writing-title">

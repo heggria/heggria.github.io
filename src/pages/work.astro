@@ -3,7 +3,7 @@ import BaseLayout from '../layouts/BaseLayout.astro'
 import repositories from '../data/repositories.json'
 const descriptions: Record<string,string> = {
   taskflow:'给 coding agent 编排任务，验证任务图，查看执行记录，恢复、回放或增量重算。当前发布为 beta。',
-  flowgate:'基于 sing-box 的 macOS 代理客户端，管理订阅、节点、路由和连接。开发中。',
+  flowgate:'面向 Apple Silicon Mac 的 sing-box 代理工作区，管理订阅、节点、分流和实时连接。开发预览阶段。',
   'home-compass':'北京住房的板块评分与月供预算计算器。评分权重可调整，数据与估算需结合实际核对。',
   selffield:'在浏览器里记录经历、回答和变化的个人实验，数据保存在本地。',
   'heggria.github.io':'这个网站。Astro 静态站点，使用 Pagefind 做全文搜索。',
@@ -17,9 +17,9 @@ const forks = repositories.filter(r=>r.fork)
 ---
 <BaseLayout title="项目与仓库 — Heggria" description="个人开源项目、开发中的实验、归档代码和 fork 的完整目录。">
   <div class="page-width">
-    <header class="page-heading work-intro"><p class="eyebrow">WORK / REPOSITORIES</p><h1>想法落到代码里。</h1><p>主要维护 taskflow，也做一些独立工具和浏览器实验。这里保留项目的当前状态、使用入口与源码。</p></header>
+    <header class="page-heading work-intro"><p class="eyebrow">WORK / REPOSITORIES</p><h1>想法落到代码里。</h1><p>正在做 taskflow 和 FlowGate，也保留一些独立工具和浏览器实验。这里保留项目的当前状态、使用入口与源码。</p></header>
     <div class="work-case-banner"><div><p class="eyebrow">SELECTED CASE / TASKFLOW</p><h2>让多步任务可以检查、恢复和重算。</h2><p>从交互实验开始，看看这个工具背后的设计。</p></div><a class="text-link" href="/work/taskflow/">查看项目案例 <span aria-hidden="true">↗</span></a></div>
-    <section class="work-group"><h2>个人项目</h2>{main.map(r=><div class="work-repo"><h3><a href={r.url}>{r.name} ↗</a></h3><div><p>{descriptions[r.name]}</p>{r.homepage&&<a class="text-link repo-demo" href={r.homepage}>打开网站 ↗</a>}</div><span class="repo-kind">{r.language}</span></div>)}</section>
+    <section class="work-group"><h2>个人项目</h2>{main.map(r=><div class="work-repo"><h3><a href={r.name==='flowgate'?'/work/flowgate/':r.url}>{r.name==='flowgate'?'FlowGate':r.name} ↗</a></h3><div><p>{descriptions[r.name]}</p>{r.name==='flowgate'?<div class="repo-links"><a class="text-link repo-demo" href="/work/flowgate/">项目介绍 ↗</a><a class="text-link repo-demo" href={r.url}>GitHub 源码 ↗</a></div>:r.homepage&&<a class="text-link repo-demo" href={r.homepage}>打开网站 ↗</a>}</div><span class="repo-kind">{r.language}</span></div>)}</section>
     <section class="work-group"><h2>工作</h2><div class="work-repo"><h3><a href="https://github.com/nexu-io/open-design">OpenDesign ↗</a></h3><p>我目前所在的团队，做开源、本地优先的设计工具。它是公司的项目。</p><span class="repo-kind">团队项目</span></div></section>
     <section class="work-group"><h2>站点与分发</h2>{infrastructure.map(r=><div class="repo-archive-row"><a href={r.url}>{r.name} ↗</a><span>{descriptions[r.name]}</span></div>)}</section>
     <details class="repo-details"><summary>归档项目 <span class="count">{archived.length}</span></summary><p class="repo-note">以下仓库已归档，作为历史代码保留。有些是完整实验，有些只有原型或提案。</p>{archived.map(r=><div class="repo-archive-row"><a href={r.url}>{r.name} ↗</a><span>{r.description}</span></div>)}</details>

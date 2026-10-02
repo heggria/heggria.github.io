@@ -1,7 +1,7 @@
 ---
 import '../styles/global.css'
-interface Props { title?: string; description?: string; canonical?: string; type?: 'website' | 'article' }
-const { title = 'Heggria — 工具、实验与写作', description = 'Heggria 的开源工具、界面实验与技术写作。在上海的 OpenDesign 做开发，维护 taskflow。', canonical = new URL(Astro.url.pathname, Astro.site).href, type = 'website' } = Astro.props
+interface Props { title?: string; description?: string; canonical?: string; type?: 'website' | 'article'; image?: string; imageAlt?: string }
+const { title = 'Heggria — 工具、实验与写作', description = 'Heggria 的开源工具、界面实验与技术写作。在上海的 OpenDesign 做开发，开发 taskflow 与 FlowGate。', canonical = new URL(Astro.url.pathname, Astro.site).href, type = 'website', image = 'https://heggria.github.io/avatar.jpg', imageAlt = 'Heggria 的头像' } = Astro.props
 const path = Astro.url.pathname
 ---
 <!doctype html>
@@ -14,8 +14,8 @@ const path = Astro.url.pathname
     <meta name="description" content={description} />
     <meta property="og:type" content={type} /><meta property="og:title" content={title} />
     <meta property="og:description" content={description} /><meta property="og:url" content={canonical} />
-    <meta property="og:site_name" content="Heggria" /><meta property="og:image" content="https://heggria.github.io/avatar.jpg" />
-    <meta property="og:image:alt" content="Heggria 的头像" /><meta name="twitter:card" content="summary" />
+    <meta property="og:site_name" content="Heggria" /><meta property="og:image" content={image} />
+    <meta property="og:image:alt" content={imageAlt} /><meta name="twitter:card" content="summary" />
     <link rel="canonical" href={canonical} /><link rel="icon" href="/avatar.jpg" type="image/jpeg" />
     <link rel="alternate" type="application/rss+xml" title="Heggria 的文章" href="/rss.xml" />
     <link rel="sitemap" href="/sitemap-index.xml" />
