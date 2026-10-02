@@ -33,6 +33,8 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Check content and types
         run: pnpm check
+      - name: Check interactive teaching model
+        run: node --experimental-strip-types --test src/lib/flow-lab.test.ts
       - name: Build site and search index
         run: pnpm build
       - name: Upload Pages artifact

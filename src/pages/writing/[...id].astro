@@ -1,6 +1,7 @@
 ---
 import { getCollection, render, type CollectionEntry } from 'astro:content'
 import PostLayout from '../../layouts/PostLayout.astro'
+import FlowLab from '../../components/FlowLab.astro'
 import { published, readingMinutes } from '../../lib/posts'
 export async function getStaticPaths() {
   const posts = (await getCollection('posts')).filter(published)
@@ -11,4 +12,7 @@ const { post }=Astro.props
 const { Content, headings }=await render(post)
 const canonical=new URL(`/writing/${post.id}/`,Astro.site).href
 ---
-<PostLayout title={post.data.title} description={post.data.description} date={post.data.date} minutes={readingMinutes(post.body)} tags={post.data.tags} canonical={canonical} headings={headings}><Content /></PostLayout>
+<PostLayout title={post.data.title} description={post.data.description} date={post.data.date} minutes={readingMinutes(post.body)} tags={post.data.tags} canonical={canonical} headings={headings}>
+  {post.id === 'recompute-case-study' && <div slot="exhibit" class="article-experiment"><FlowLab id="article-flow" /></div>}
+  <Content />
+</PostLayout>

@@ -17,7 +17,8 @@ const forks = repositories.filter(r=>r.fork)
 ---
 <BaseLayout title="项目与仓库 — Heggria" description="个人开源项目、开发中的实验、归档代码和 fork 的完整目录。">
   <div class="page-width">
-    <header class="page-heading work-intro"><p class="eyebrow">WORK / REPOSITORIES</p><h1>项目与仓库<span class="accent">.</span></h1><p>主要维护 taskflow，也做一些小工具。旧实验和 fork 单独放在下面，方便分清哪些是现在的工作。</p></header>
+    <header class="page-heading work-intro"><p class="eyebrow">WORK / REPOSITORIES</p><h1>想法落到代码里。</h1><p>主要维护 taskflow，也做一些独立工具和浏览器实验。这里保留项目的当前状态、使用入口与源码。</p></header>
+    <div class="work-case-banner"><div><p class="eyebrow">SELECTED CASE / TASKFLOW</p><h2>让多步任务可以检查、恢复和重算。</h2><p>从交互实验开始，看看这个工具背后的设计。</p></div><a class="text-link" href="/work/taskflow/">查看项目案例 <span aria-hidden="true">↗</span></a></div>
     <section class="work-group"><h2>个人项目</h2>{main.map(r=><div class="work-repo"><h3><a href={r.url}>{r.name} ↗</a></h3><div><p>{descriptions[r.name]}</p>{r.homepage&&<a class="text-link repo-demo" href={r.homepage}>打开网站 ↗</a>}</div><span class="repo-kind">{r.language}</span></div>)}</section>
     <section class="work-group"><h2>工作</h2><div class="work-repo"><h3><a href="https://github.com/nexu-io/open-design">OpenDesign ↗</a></h3><p>我目前所在的团队，做开源、本地优先的设计工具。它是公司的项目。</p><span class="repo-kind">团队项目</span></div></section>
     <section class="work-group"><h2>站点与分发</h2>{infrastructure.map(r=><div class="repo-archive-row"><a href={r.url}>{r.name} ↗</a><span>{descriptions[r.name]}</span></div>)}</section>

@@ -1,0 +1,11 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro'
+import FlowLab from '../components/FlowLab.astro'
+---
+<BaseLayout title="实验 001：哪些工作需要重来 — Heggria" description="改变一个输入，看看哪些步骤重新执行，哪些结果可以复用。一个关于 taskflow 增量重算的交互教学模型。">
+  <div class="page-width lab-page">
+    <header class="page-heading"><p class="eyebrow">EXPERIMENT 001 / TASKFLOW</p><h1>一次小改动，<br>需要全部重来吗？</h1><p>试着修改摘要，或让新一轮执行得到相同的结果。点开每一步，看看它为什么重做、为什么保留。</p></header>
+    <FlowLab id="full-flow" />
+    <div class="lab-notes"><div><h2>这里在演示什么</h2><p>一个五步流程里的依赖传播与结果复用。它在浏览器里计算，使用固定的教学情景，不调用模型，也不代表真实运行的成本或耗时。</p></div><div><h2>真实系统还要处理什么</h2><p>观测到的依赖、输入指纹、无法缓存的阶段，以及依赖不完整时的保守处理。教学模型只呈现其中一小部分。</p><a class="text-link" href="/writing/recompute-case-study/">阅读完整设计案例 <span aria-hidden="true">↗</span></a></div></div>
+  </div>
+</BaseLayout>

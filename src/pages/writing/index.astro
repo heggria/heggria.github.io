@@ -7,7 +7,8 @@ const years = [...new Set(posts.map(yearOf))]
 ---
 <BaseLayout title="文章 — Heggria" description="Heggria 的全部文章：前端、agent 工具和开发中的具体问题。">
   <div class="page-width writing-page">
-    <header class="page-heading"><p class="eyebrow">WRITING / {posts.length} 篇</p><h1>文章与笔记<span class="accent">.</span></h1><p>从前端学习笔记，到最近做工具时遇到的问题。</p></header>
+    <header class="page-heading"><p class="eyebrow">WRITING / SINCE 2022</p><h1>过程值得留下来。</h1><p>工程案例、技术拆解，以及还没长成文章的短笔记。</p></header>
+    <a class="writing-featured" href="/writing/recompute-case-study/"><span class="eyebrow">精选案例<br>2026.10</span><div><h2>改了一个输入，哪些工作需要重来？ <span aria-hidden="true">↗</span></h2><p>一个可操作的五步流程，解释 taskflow 的依赖传播、结果复用，以及不能跳过的检查。</p></div></a>
     <div class="archive-tools"><label><span class="visually-hidden">按标题或标签筛选</span><input id="archive-query" type="search" placeholder="筛选标题、简介或标签" autocomplete="off" /></label><label><span class="visually-hidden">按年份筛选</span><select id="archive-year"><option value="all">全部年份</option>{years.map(y=><option value={y}>{y}</option>)}</select></label><span id="archive-count" aria-live="polite">{posts.length} 篇</span></div>
     <div class="archive-list">{years.map(year=><section class="archive-year" data-year-group={year}><h2>{year}</h2><div>{posts.filter(p=>yearOf(p)===year).map(post=><a class="archive-row" href={postLink(post)} data-year={year} data-search={`${post.data.title} ${post.data.description||''} ${post.data.tags.join(' ')}`.toLowerCase()}><time datetime={post.data.date.toISOString()}>{formatDate(post.data.date,true)}</time><span class="archive-title">{post.data.title}</span><span class="archive-duration">约 {readingMinutes(post.body)} 分钟</span><span aria-hidden="true">↗</span></a>)}</div></section>)}</div>
     <p id="archive-empty" class="empty-state" hidden>没有匹配的文章。换个关键词，或选择全部年份。</p>

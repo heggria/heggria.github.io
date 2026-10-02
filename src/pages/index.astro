@@ -1,30 +1,53 @@
 ---
 import { getCollection } from 'astro:content'
 import BaseLayout from '../layouts/BaseLayout.astro'
-import PostCard from '../components/PostCard.astro'
-import { published, newestFirst } from '../lib/posts'
+import FlowLab from '../components/FlowLab.astro'
+import { published, newestFirst, formatDate, postLink } from '../lib/posts'
 const posts = (await getCollection('posts')).filter(published).sort(newestFirst)
-const projects = [
-  { name: 'taskflow', kind: '个人开源', description: '给 coding agent 编排任务，查看执行记录，重放或重算其中一部分。', href: 'https://github.com/heggria/taskflow', mark: '↳', tech: 'TypeScript · Beta' },
-  { name: 'OpenDesign', kind: '工作', description: '目前所在的团队，做开源、本地优先的设计工具。', href: 'https://github.com/nexu-io/open-design', mark: '◇', tech: '设计工具' },
-  { name: 'SelfField', kind: '个人实验', description: '记录经历和相互矛盾的想法，不给自己归一个人格类型。', href: 'https://heggria.github.io/selffield/', mark: '◎', tech: 'React' },
-]
+const notes = posts.filter(p=>p.id!=='recompute-case-study').slice(0,3)
 ---
 <BaseLayout>
   <div class="page-width">
-    <section class="home-intro">
-      <div class="intro-main"><p class="eyebrow">个人网站 / NOTES SINCE 2022</p><h1>Heggria<span class="accent">.</span></h1><p class="intro-description">在上海写代码，<br>目前在 <a href="https://github.com/nexu-io/open-design">OpenDesign</a>。</p><p class="intro-note">这里放我做的项目，以及从 2022 年开始写的技术笔记。</p></div>
-      <aside class="intro-aside"><div class="portrait-frame"><img src="/avatar.jpg" alt="Heggria 的头像" width="208" height="208" fetchpriority="high"/><span class="portrait-caption">HEGGRIA / SHANGHAI</span></div><a class="text-link" href="/about/">多了解一点 ↗</a></aside>
+    <section class="studio-hero" aria-labelledby="intro-title">
+      <div class="hero-copy">
+        <p class="eyebrow"><span class="index-mark">H / 01</span> TOOLS, EXPERIMENTS & WORDS</p>
+        <h1 id="intro-title">构建工具。<br><span>拆解问题。</span></h1>
+        <p class="hero-description">我是 Heggria，在上海的 <a href="https://github.com/nexu-io/open-design">OpenDesign</a> 做开发。这里放我做的开源工具、界面实验，以及做它们时留下的笔记。</p>
+        <div class="hero-links"><a class="button-primary" href="/work/">看看我的项目 <span aria-hidden="true">↗</span></a><a class="text-link" href="/about/">认识我</a></div>
+        <div class="hero-byline"><img src="/avatar.jpg" alt="" width="36" height="36"/><span>目前主要维护 <a href="https://github.com/heggria/taskflow">taskflow</a><small>Agent 工作流 · TypeScript · 开源</small></span></div>
+      </div>
+      <div class="hero-exhibit">
+        <div class="exhibit-caption"><span>EXPERIMENT 001</span><a href="/lab/">打开实验 <span aria-hidden="true">↗</span></a></div>
+        <FlowLab compact id="home-flow" />
+        <p class="exhibit-footnote">一次小改动，需要全部重来吗？<a href="/writing/recompute-case-study/">读这个实验背后的设计</a></p>
+      </div>
     </section>
-    <section class="home-projects" id="work" aria-labelledby="work-title">
-      <div class="section-label"><h2 id="work-title">最近在做</h2><a href="/work/">所有项目 ↗</a></div>
-      <div class="project-trio">{projects.map(p=><a class="project-tile" href={p.href}><span class="project-top"><span class="project-symbol" aria-hidden="true">{p.mark}</span><span>{p.kind}</span><span class="external-arrow" aria-hidden="true">↗</span></span><h3>{p.name}</h3><p>{p.description}</p><span class="project-tech">{p.tech}</span></a>)}</div>
+    <section class="selected-section" aria-labelledby="selected-title">
+      <div class="section-label"><div><span class="section-number">01 / SELECTED WORK</span><h2 id="selected-title">做过的东西</h2></div><a class="text-link" href="/work/">项目与仓库 <span aria-hidden="true">↗</span></a></div>
+      <div class="selected-grid">
+        <a class="work-card taskflow-card" href="/work/taskflow/">
+          <div class="card-topline"><span>个人开源 / AGENT INFRASTRUCTURE</span><span aria-hidden="true">↗</span></div>
+          <div class="taskflow-word">task<span>flow</span><span class="project-version">BETA</span></div>
+          <p>让多步 Agent 任务可以检查、恢复和重算。</p>
+          <div class="contract-strip" aria-hidden="true"><span>PLAN</span><i></i><span>RUN</span><i></i><span>INSPECT</span></div>
+          <div class="card-bottom"><span>设计案例 · 实验 · 源码</span><span>01</span></div>
+        </a>
+        <a class="work-card field-card" href="https://heggria.github.io/selffield/">
+          <div class="card-topline"><span>个人实验 / IN THE BROWSER</span><span aria-hidden="true">↗</span></div>
+          <h3>SelfField<span>留一点空间，<br>给变化中的自己。</span></h3>
+          <p>记录回答与上下文，保留相互矛盾的想法。数据存在自己的浏览器里。</p>
+          <div class="card-bottom"><span>打开项目</span><span>02</span></div>
+        </a>
+      </div>
+      <div class="company-line"><span class="company-label">目前的工作</span><a href="https://github.com/nexu-io/open-design">OpenDesign <span aria-hidden="true">↗</span></a><p>在团队里做开源、本地优先的设计工具。</p><span class="team-note">团队项目</span></div>
     </section>
-    <section class="home-writing" aria-labelledby="writing-title">
-      <div class="section-label"><h2 id="writing-title">最近的文章 <span class="count">{posts.length}</span></h2><a href="/writing/">全部文章 ↗</a></div>
-      <div>{posts.slice(0,6).map(post=><PostCard post={post} />)}</div>
-      <a class="archive-link" href="/writing/">往前翻翻 <span>2022 — {new Date().getFullYear()} ↗</span></a>
+    <section class="writing-selection" aria-labelledby="writing-title">
+      <div class="section-label"><div><span class="section-number">02 / FIELD NOTES</span><h2 id="writing-title">写下过程，也写下取舍</h2></div><a class="text-link" href="/writing/">全部写作 <span aria-hidden="true">↗</span></a></div>
+      <div class="writing-grid">
+        <a class="feature-essay" href="/writing/recompute-case-study/"><span class="eyebrow">工程案例 / TASKFLOW</span><h3>改了一个输入，<br>哪些工作需要重来？</h3><p>从一个五步流程开始，拆开依赖、缓存和重算。也说清楚哪些结果不能放心复用。</p><span class="essay-link">阅读案例 <span aria-hidden="true">↗</span></span></a>
+        <div class="recent-notes">{notes.map(post=><a class="note-row" href={postLink(post)}><time datetime={post.data.date.toISOString()}>{formatDate(post.data.date)}</time><h3>{post.data.title}</h3><span aria-hidden="true">↗</span></a>)}<p class="archive-count">{posts.length} 篇文章与笔记，自 2022 年起。</p></div>
+      </div>
     </section>
-    <section class="home-contact"><p>想交流某个项目或文章？</p><a href="mailto:bshengtao@gmail.com">给我写邮件 ↗</a></section>
+    <section class="studio-contact"><p class="eyebrow">LET’S COMPARE NOTES</p><h2>正在解决类似的问题？</h2><p>如果你也在做 Agent 工具、开发者体验，或有一个想认真打磨的产品，欢迎带着具体问题来交流。</p><a href="mailto:bshengtao@gmail.com">bshengtao@gmail.com <span aria-hidden="true">↗</span></a></section>
   </div>
 </BaseLayout>
