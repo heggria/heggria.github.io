@@ -1,7 +1,7 @@
 ---
 import '../styles/global.css'
 interface Props { title?: string; description?: string; canonical?: string; type?: 'website' | 'article' }
-const { title = 'Heggria · 个人网站', description = 'Heggria 的项目和技术笔记。目前在北京的 OpenDesign 做开发。', canonical = new URL(Astro.url.pathname, Astro.site).href, type = 'website' } = Astro.props
+const { title = 'Heggria · 个人网站', description = 'Heggria 的项目和技术笔记。目前在上海的 OpenDesign 做开发。', canonical = new URL(Astro.url.pathname, Astro.site).href, type = 'website' } = Astro.props
 const path = Astro.url.pathname
 ---
 <!doctype html>
@@ -40,7 +40,7 @@ const path = Astro.url.pathname
     </header>
     <main id="content"><slot /></main>
     <footer class="site-footer" data-pagefind-ignore>
-      <a href="/" class="footer-name">Heggria<span> / 北京</span></a>
+      <a href="/" class="footer-name">Heggria<span> / 上海</span></a>
       <div><a href="https://github.com/heggria">GitHub ↗</a><a href="/rss.xml">RSS</a><a href="mailto:bshengtao@gmail.com">Email</a></div>
       <span class="copyright">2022–{new Date().getFullYear()}</span>
     </footer>
