@@ -10,15 +10,20 @@
     "preview": "astro preview"
   },
   "dependencies": {
-    "@astrojs/markdown-remark": "^7.0.0",
+    "@astrojs/markdown-remark": "^7.3.10",
     "@astrojs/rss": "^4.0.19",
-    "@astrojs/sitemap": "^3.7.3",
-    "astro": "^7.0.9",
+    "@astrojs/sitemap": "^3.7.6",
+    "astro": "^7.4.13",
     "remark-gfm": "^4.0.1"
   },
   "devDependencies": {
-    "@astrojs/check": "^0.9.9",
+    "@astrojs/check": "^0.9.12",
     "pagefind": "^1.5.2",
     "typescript": "^6.0.3"
+  },
+  "pnpm": {
+    "overrides": {
+      "esbuild@<=0.24.2": "^0.25.0"
+    }
   }
 }
